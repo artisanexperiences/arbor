@@ -1,0 +1,85 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        go-version: ['1.23']
+        include:
+          - os: ubuntu-latest
+            artifact_suffix: linux_amd64
+            zip_extension: tar.gz
+          - os: macos-latest
+            artifact_suffix: darwin_amd64
+            zip_extension: tar.gz
+          - os: windows-latest
+            artifact_suffix: windows_amd64
+            zip_extension: zip
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+
+      - name: Get version
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Build binary
+        run: |
+          CGO_ENABLED=0 GOOS=${{ matrix.os == 'windows-latest' && 'windows' || (matrix.os == 'macos-latest' && 'darwin' || 'linux') }} GOARCH=amd64 go build -o arbor-${{ steps.version.outputs.VERSION }}-${{ matrix.artifact_suffix }} ./cmd/arbor
+
+      - name: Create archive
+        if: matrix.zip_extension == 'tar.gz'
+        run: tar -czf arbor-${{ steps.version.outputs.VERSION }}-${{ matrix.artifact_suffix }}.${{ matrix.zip_extension }} arbor-${{ steps.version.outputs.VERSION }}-${{ matrix.artifact_suffix }}
+
+      - name: Create zip
+        if: matrix.zip_extension == 'zip'
+        run: 7z a arbor-${{ steps.version.outputs.VERSION }}-${{ matrix.artifact_suffix }}.${{ matrix.zip_extension }} arbor-${{ steps.version.outputs.VERSION }}-${{ matrix.artifact_suffix }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: arbor-${{ matrix.artifact_suffix }}
+          path: arbor-${{ steps.version.outputs.VERSION }}-${{ matrix.artifact_suffix }}.${{ matrix.zip_extension }}
+
+  create-release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get version
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.VERSION }}
+          files: release-artifacts/**
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
