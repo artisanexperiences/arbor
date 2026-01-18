@@ -115,8 +115,7 @@ Arguments:
 func init() {
 	rootCmd.AddCommand(initCmd)
 
-	scaffoldManager.RegisterPreset(presets.NewLaravel())
-	scaffoldManager.RegisterPreset(presets.NewPHP())
+	presets.RegisterAllWithScaffold(scaffoldManager)
 
 	initCmd.Flags().String("preset", "", "Project preset (laravel, php)")
 	initCmd.Flags().Bool("interactive", false, "Interactive preset selection")

@@ -216,8 +216,7 @@ func isCommandAvailable(name string) bool {
 func init() {
 	rootCmd.AddCommand(workCmd)
 
-	scaffoldManager.RegisterPreset(presets.NewLaravel())
-	scaffoldManager.RegisterPreset(presets.NewPHP())
+	presets.RegisterAllWithScaffold(scaffoldManager)
 
 	workCmd.Flags().StringP("base", "b", "", "Base branch for new worktree")
 	workCmd.Flags().Bool("interactive", false, "Interactive branch selection")

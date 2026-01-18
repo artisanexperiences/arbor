@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/michaeldyrynda/arbor/internal/scaffold"
 )
 
 type Manager struct {
@@ -27,6 +29,12 @@ func (m *Manager) Register(preset Preset) {
 func (m *Manager) Get(name string) (Preset, bool) {
 	preset, ok := m.presets[name]
 	return preset, ok
+}
+
+// RegisterAllWithScaffold registers all built-in presets with a scaffold manager
+func RegisterAllWithScaffold(m *scaffold.ScaffoldManager) {
+	m.RegisterPreset(NewLaravel())
+	m.RegisterPreset(NewPHP())
 }
 
 func (m *Manager) Detect(path string) string {
