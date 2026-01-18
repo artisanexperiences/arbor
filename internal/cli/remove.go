@@ -86,6 +86,8 @@ Cleanup steps may include:
 		if !dryRun {
 			presetManager := presets.NewManager()
 			scaffoldManager := scaffold.NewScaffoldManager()
+			scaffoldManager.RegisterPreset(presets.NewLaravel())
+			scaffoldManager.RegisterPreset(presets.NewPHP())
 
 			preset := cfg.Preset
 			if preset == "" {

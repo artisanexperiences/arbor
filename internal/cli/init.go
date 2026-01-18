@@ -95,6 +95,16 @@ Arguments:
 			return fmt.Errorf("saving config: %w", err)
 		}
 
+		verbose, _ := cmd.Flags().GetBool("verbose")
+
+		if cfg.Preset != "" && verbose {
+			fmt.Printf("Running scaffold for preset: %s\n", cfg.Preset)
+		}
+
+		if err := scaffoldManager.RunScaffold(mainPath, defaultBranch, cfg.Preset, cfg, false, verbose); err != nil {
+			fmt.Printf("Warning: scaffold steps failed: %v\n", err)
+		}
+
 		fmt.Printf("\nArbor project initialised at %s\n", absPath)
 		fmt.Println("Project config saved to arbor.yaml")
 
@@ -104,6 +114,9 @@ Arguments:
 
 func init() {
 	rootCmd.AddCommand(initCmd)
+
+	scaffoldManager.RegisterPreset(presets.NewLaravel())
+	scaffoldManager.RegisterPreset(presets.NewPHP())
 
 	initCmd.Flags().String("preset", "", "Project preset (laravel, php)")
 	initCmd.Flags().Bool("interactive", false, "Interactive preset selection")

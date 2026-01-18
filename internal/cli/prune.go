@@ -139,6 +139,8 @@ interactive review before removal.`,
 
 		presetManager := presets.NewManager()
 		scaffoldManager := scaffold.NewScaffoldManager()
+		scaffoldManager.RegisterPreset(presets.NewLaravel())
+		scaffoldManager.RegisterPreset(presets.NewPHP())
 
 		for _, wt := range toRemove {
 			fmt.Printf("Removing %s...\n", wt.Branch)
