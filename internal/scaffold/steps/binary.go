@@ -31,10 +31,11 @@ func (s *BinaryStep) Name() string {
 func (s *BinaryStep) Run(ctx types.ScaffoldContext, opts types.StepOptions) error {
 	allArgs := append(s.args, opts.Args...)
 	if opts.Verbose {
-		fullCmd := append([]string{s.binary}, allArgs...)
+		binaryParts := strings.Fields(s.binary)
+		fullCmd := append(binaryParts, allArgs...)
 		fmt.Printf("  Running: %s\n", strings.Join(fullCmd, " "))
 	}
-	cmd := exec.Command(s.binary, allArgs...)
+	cmd := exec.Command(strings.Fields(s.binary)[0], append(strings.Fields(s.binary)[1:], allArgs...)...)
 	cmd.Dir = ctx.WorktreePath
 	return cmd.Run()
 }
@@ -44,6 +45,10 @@ func (s *BinaryStep) Priority() int {
 }
 
 func (s *BinaryStep) Condition(ctx types.ScaffoldContext) bool {
-	_, err := exec.LookPath(s.binary)
+	binaries := strings.Fields(s.binary)
+	if len(binaries) == 0 {
+		return false
+	}
+	_, err := exec.LookPath(binaries[0])
 	return err == nil
 }
