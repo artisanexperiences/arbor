@@ -121,10 +121,6 @@ func (e *StepExecutor) executeStep(step types.ScaffoldStep) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	if e.opts.Verbose {
-		fmt.Printf("Executing step: %s\n", step.Name())
-	}
-
 	enabled := true
 
 	stepConfig, ok := step.(interface{ IsEnabled() bool })
@@ -144,6 +140,10 @@ func (e *StepExecutor) executeStep(step types.ScaffoldStep) error {
 	}
 
 	if step.Condition(e.ctx) {
+		if e.opts.Verbose {
+			fmt.Printf("Executing step: %s\n", step.Name())
+		}
+
 		if e.opts.DryRun {
 			if e.opts.Verbose {
 				fmt.Printf("[DRY-RUN] Would execute: %s\n", step.Name())
