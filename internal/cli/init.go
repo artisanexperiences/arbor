@@ -95,11 +95,13 @@ Arguments:
 
 		verbose, _ := cmd.Flags().GetBool("verbose")
 
+		repoName := utils.SanitisePath(utils.ExtractRepoName(repo))
+
 		if cfg.Preset != "" && verbose {
 			fmt.Printf("Running scaffold for preset: %s\n", cfg.Preset)
 		}
 
-		if err := scaffoldManager.RunScaffold(mainPath, defaultBranch, cfg.Preset, cfg, false, verbose); err != nil {
+		if err := scaffoldManager.RunScaffold(mainPath, defaultBranch, repoName, cfg.Preset, cfg, false, verbose); err != nil {
 			fmt.Printf("Warning: scaffold steps failed: %v\n", err)
 		}
 

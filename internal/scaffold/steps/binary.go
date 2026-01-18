@@ -30,6 +30,7 @@ func (s *BinaryStep) Name() string {
 
 func (s *BinaryStep) Run(ctx types.ScaffoldContext, opts types.StepOptions) error {
 	allArgs := append(s.args, opts.Args...)
+	allArgs = s.replaceTemplate(allArgs, ctx)
 	if opts.Verbose {
 		binaryParts := strings.Fields(s.binary)
 		fullCmd := append(binaryParts, allArgs...)
@@ -38,6 +39,15 @@ func (s *BinaryStep) Run(ctx types.ScaffoldContext, opts types.StepOptions) erro
 	cmd := exec.Command(strings.Fields(s.binary)[0], append(strings.Fields(s.binary)[1:], allArgs...)...)
 	cmd.Dir = ctx.WorktreePath
 	return cmd.Run()
+}
+
+func (s *BinaryStep) replaceTemplate(args []string, ctx types.ScaffoldContext) []string {
+	for i, arg := range args {
+		arg = strings.ReplaceAll(arg, "{{ .RepoName }}", ctx.RepoName)
+		arg = strings.ReplaceAll(arg, "{{ .Branch }}", ctx.Branch)
+		args[i] = arg
+	}
+	return args
 }
 
 func (s *BinaryStep) Priority() int {

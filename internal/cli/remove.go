@@ -95,7 +95,7 @@ Cleanup steps may include:
 
 			fmt.Printf("Running cleanup steps for preset: %s\n", preset)
 
-			if err := scaffoldManager.RunCleanup(targetWorktree.Path, branch, preset, cfg, false, verbose); err != nil {
+			if err := scaffoldManager.RunCleanup(targetWorktree.Path, branch, "", preset, cfg, false, verbose); err != nil {
 				fmt.Printf("Warning: cleanup steps failed: %v\n", err)
 			}
 

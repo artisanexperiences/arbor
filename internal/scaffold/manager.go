@@ -138,10 +138,11 @@ func (m *ScaffoldManager) stepsFromConfig(stepConfigs []config.StepConfig) []typ
 	return stepsList
 }
 
-func (m *ScaffoldManager) RunScaffold(worktreePath, branch, preset string, cfg *config.Config, dryRun, verbose bool) error {
+func (m *ScaffoldManager) RunScaffold(worktreePath, branch, repoName, preset string, cfg *config.Config, dryRun, verbose bool) error {
 	ctx := types.ScaffoldContext{
 		WorktreePath: worktreePath,
 		Branch:       branch,
+		RepoName:     repoName,
 		Preset:       preset,
 		Env:          make(map[string]string),
 	}
@@ -164,10 +165,11 @@ func (m *ScaffoldManager) RunScaffold(worktreePath, branch, preset string, cfg *
 	return nil
 }
 
-func (m *ScaffoldManager) RunCleanup(worktreePath, branch, preset string, cfg *config.Config, dryRun, verbose bool) error {
+func (m *ScaffoldManager) RunCleanup(worktreePath, branch, repoName, preset string, cfg *config.Config, dryRun, verbose bool) error {
 	ctx := types.ScaffoldContext{
 		WorktreePath: worktreePath,
 		Branch:       branch,
+		RepoName:     repoName,
 		Preset:       preset,
 		Env:          make(map[string]string),
 	}

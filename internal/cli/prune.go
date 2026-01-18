@@ -150,7 +150,7 @@ interactive review before removal.`,
 					preset = presetManager.Detect(wt.Path)
 				}
 
-				if err := scaffoldManager.RunCleanup(wt.Path, wt.Branch, preset, cfg, false, verbose); err != nil {
+				if err := scaffoldManager.RunCleanup(wt.Path, wt.Branch, "", preset, cfg, false, verbose); err != nil {
 					fmt.Printf("Warning: cleanup steps failed: %v\n", err)
 				}
 

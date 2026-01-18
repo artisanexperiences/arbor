@@ -3,6 +3,7 @@ package types
 type ScaffoldContext struct {
 	WorktreePath string
 	Branch       string
+	RepoName     string
 	Preset       string
 	Env          map[string]string
 }

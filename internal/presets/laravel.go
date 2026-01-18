@@ -27,7 +27,7 @@ func NewLaravel() *Laravel {
 				{Name: "php.laravel.artisan", Args: []string{"migrate:fresh", "--seed", "--no-interaction"}},
 				{Name: "node.npm", Args: []string{"run", "build"}, Priority: 15},
 				{Name: "php.laravel.artisan", Args: []string{"storage:link", "--no-interaction"}},
-				{Name: "herd", Args: []string{"link", "--secure"}},
+				{Name: "herd", Args: []string{"link", "--secure", "{{ .RepoName }}"}},
 			},
 			cleanupSteps: []config.CleanupStep{
 				{Name: "herd", Condition: nil},

@@ -125,7 +125,8 @@ available branches or entering a new branch name.`,
 				fmt.Printf("Running scaffold for preset: %s\n", preset)
 			}
 
-			if err := scaffoldManager.RunScaffold(absWorktreePath, branch, preset, cfg, false, verbose); err != nil {
+			repoName := filepath.Base(filepath.Dir(absWorktreePath))
+			if err := scaffoldManager.RunScaffold(absWorktreePath, branch, repoName, preset, cfg, false, verbose); err != nil {
 				fmt.Printf("Warning: scaffold steps failed: %v\n", err)
 			}
 		} else {
