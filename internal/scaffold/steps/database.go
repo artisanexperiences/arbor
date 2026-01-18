@@ -7,19 +7,22 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 
+	"github.com/michaeldyrynda/arbor/internal/config"
 	"github.com/michaeldyrynda/arbor/internal/scaffold/types"
+	"github.com/michaeldyrynda/arbor/internal/utils"
 )
 
 type DatabaseStep struct {
 	name     string
+	args     []string
 	priority int
 }
 
-func NewDatabaseStep(priority int) *DatabaseStep {
+func NewDatabaseStep(cfg config.StepConfig, priority int) *DatabaseStep {
 	return &DatabaseStep{
 		name:     "database.create",
+		args:     cfg.Args,
 		priority: priority,
 	}
 }
@@ -37,16 +40,27 @@ func (s *DatabaseStep) Condition(ctx types.ScaffoldContext) bool {
 }
 
 func (s *DatabaseStep) Run(ctx types.ScaffoldContext, opts types.StepOptions) error {
-	dbType := ctx.Env["DB_CONNECTION"]
-	dbName := ctx.Env["DB_DATABASE"]
+	dbType := ""
+	dbName := ""
 
-	if dbType == "" && dbName == "" {
-		dbType, dbName = s.readDbConfigFromEnv(ctx.WorktreePath)
+	for i, arg := range s.args {
+		if arg == "--type" && i+1 < len(s.args) {
+			dbType = s.args[i+1]
+		}
+		if arg == "--database" && i+1 < len(s.args) {
+			dbName = s.args[i+1]
+		}
 	}
 
 	if dbType == "" && dbName == "" {
+		env := utils.ReadEnvFile(ctx.WorktreePath, ".env")
+		dbType = env["DB_CONNECTION"]
+		dbName = env["DB_DATABASE"]
+	}
+
+	if dbType == "" {
 		if opts.Verbose {
-			fmt.Printf("  No database configuration found, skipping database creation.\n")
+			fmt.Printf("  No database type specified, skipping.\n")
 		}
 		return nil
 	}
@@ -56,36 +70,13 @@ func (s *DatabaseStep) Run(ctx types.ScaffoldContext, opts types.StepOptions) er
 	}
 
 	if dbType == "sqlite" {
-		return s.createSqliteDatabase(ctx, dbName, opts)
+		return s.createSqlite(ctx, dbName, opts)
 	}
 
-	return s.createMysqlOrPgsqlDatabase(ctx, dbName, opts)
+	return s.createMysqlOrPgsql(ctx, dbType, dbName, opts)
 }
 
-func (s *DatabaseStep) readDbConfigFromEnv(worktreePath string) (string, string) {
-	envFile := filepath.Join(worktreePath, ".env")
-	data, err := os.ReadFile(envFile)
-	if err != nil {
-		return "", ""
-	}
-
-	lines := string(data)
-	var dbType, dbName string
-
-	for _, line := range strings.Split(lines, "\n") {
-		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "DB_CONNECTION=") {
-			dbType = strings.TrimPrefix(line, "DB_CONNECTION=")
-		}
-		if strings.HasPrefix(line, "DB_DATABASE=") {
-			dbName = strings.TrimPrefix(line, "DB_DATABASE=")
-		}
-	}
-
-	return dbType, dbName
-}
-
-func (s *DatabaseStep) createSqliteDatabase(ctx types.ScaffoldContext, dbName string, opts types.StepOptions) error {
+func (s *DatabaseStep) createSqlite(ctx types.ScaffoldContext, dbName string, opts types.StepOptions) error {
 	if dbName == "" {
 		dbName = "database/database.sqlite"
 	}
@@ -116,23 +107,35 @@ func (s *DatabaseStep) createSqliteDatabase(ctx types.ScaffoldContext, dbName st
 	return nil
 }
 
-func (s *DatabaseStep) createMysqlOrPgsqlDatabase(ctx types.ScaffoldContext, dbName string, opts types.StepOptions) error {
+func (s *DatabaseStep) createMysqlOrPgsql(ctx types.ScaffoldContext, dbType, dbName string, opts types.StepOptions) error {
 	if dbName == "" {
 		dbName = generateDatabaseName()
 	}
 
-	dbUser := ctx.Env["DB_USERNAME"]
-	if dbUser == "" {
-		dbUser = "root"
+	dbUser := "root"
+	dbPass := ""
+	dbHost := "127.0.0.1"
+	dbPort := ""
+
+	for i, arg := range s.args {
+		if arg == "--username" && i+1 < len(s.args) {
+			dbUser = s.args[i+1]
+		}
+		if arg == "--password" && i+1 < len(s.args) {
+			dbPass = s.args[i+1]
+		}
+		if arg == "--host" && i+1 < len(s.args) {
+			dbHost = s.args[i+1]
+		}
+		if arg == "--port" && i+1 < len(s.args) {
+			dbPort = s.args[i+1]
+		}
 	}
-	dbPass := ctx.Env["DB_PASSWORD"]
-	dbHost := ctx.Env["DB_HOST"]
-	if dbHost == "" {
-		dbHost = "127.0.0.1"
-	}
-	dbPort := ctx.Env["DB_PORT"]
-	if dbPort == "" {
+
+	if dbPort == "" && dbType == "mysql" {
 		dbPort = "3306"
+	} else if dbPort == "" && dbType == "pgsql" {
+		dbPort = "5432"
 	}
 
 	if opts.Verbose {
@@ -140,17 +143,23 @@ func (s *DatabaseStep) createMysqlOrPgsqlDatabase(ctx types.ScaffoldContext, dbN
 	}
 
 	var createCmd *exec.Cmd
-	if _, err := exec.LookPath("mysql"); err == nil {
-		createCmd = exec.Command("mysql", "-u", dbUser, "-h", dbHost, "-P", dbPort)
-		if dbPass != "" {
-			createCmd.Args = append(createCmd.Args, fmt.Sprintf("-p%s", dbPass))
+	if dbType == "mysql" {
+		if _, err := exec.LookPath("mysql"); err == nil {
+			createCmd = exec.Command("mysql", "-u", dbUser, "-h", dbHost, "-P", dbPort)
+			if dbPass != "" {
+				createCmd.Args = append(createCmd.Args, fmt.Sprintf("-p%s", dbPass))
+			}
+			createCmd.Args = append(createCmd.Args, "-e", fmt.Sprintf("CREATE DATABASE IF NOT EXISTS `%s`", dbName))
 		}
-		createCmd.Args = append(createCmd.Args, "-e", fmt.Sprintf("CREATE DATABASE IF NOT EXISTS `%s`", dbName))
-	} else if _, err := exec.LookPath("psql"); err == nil {
-		env := os.Environ()
-		env = append(env, fmt.Sprintf("PGPASSWORD=%s", dbPass))
-		createCmd = exec.Command("psql", "-U", dbUser, "-h", dbHost, "-p", dbPort, "-c", fmt.Sprintf("CREATE DATABASE \"%s\"", dbName))
-		createCmd.Env = env
+	} else if dbType == "pgsql" {
+		if _, err := exec.LookPath("psql"); err == nil {
+			env := os.Environ()
+			if dbPass != "" {
+				env = append(env, fmt.Sprintf("PGPASSWORD=%s", dbPass))
+			}
+			createCmd = exec.Command("psql", "-U", dbUser, "-h", dbHost, "-p", dbPort, "-c", fmt.Sprintf("CREATE DATABASE \"%s\"", dbName))
+			createCmd.Env = env
+		}
 	}
 
 	if createCmd != nil {
@@ -170,7 +179,7 @@ func (s *DatabaseStep) createMysqlOrPgsqlDatabase(ctx types.ScaffoldContext, dbN
 			}
 		}
 	} else {
-		fmt.Printf("  No MySQL or PostgreSQL client found.\n")
+		fmt.Printf("  No %s client found.\n", dbType)
 		fmt.Printf("  Please create database '%s' manually before running migrations.\n", dbName)
 	}
 

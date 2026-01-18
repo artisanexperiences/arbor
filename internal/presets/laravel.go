@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/michaeldyrynda/arbor/internal/config"
+	"github.com/michaeldyrynda/arbor/internal/utils"
 )
 
 type Laravel struct {
@@ -19,9 +20,9 @@ func NewLaravel() *Laravel {
 			name: "laravel",
 			defaultSteps: []config.StepConfig{
 				{Name: "php.composer", Args: []string{"install"}},
-				{Name: "node.npm", Args: []string{"ci"}},
-				{Name: "file.copy", From: ".env.example", To: ".env"},
+				{Name: "file.copy", From: ".env.example", To: ".env", Priority: 5},
 				{Name: "database.create", Condition: map[string]interface{}{"file_contains": map[string]interface{}{"file": ".env", "pattern": "DB_CONNECTION"}}},
+				{Name: "node.npm", Args: []string{"ci"}},
 				{Name: "php.laravel.artisan", Args: []string{"key:generate", "--no-interaction"}, Condition: map[string]interface{}{"env_not_exists": "APP_KEY"}},
 				{Name: "php.laravel.artisan", Args: []string{"migrate:fresh", "--seed", "--no-interaction"}},
 				{Name: "node.npm", Args: []string{"run", "build"}, Priority: 15},
@@ -52,4 +53,12 @@ func (p *Laravel) Detect(path string) bool {
 	}
 
 	return strings.Contains(string(data), "laravel/framework")
+}
+
+func (p *Laravel) Suggest(path string) string {
+	env := utils.ReadEnvFile(path, ".env")
+	if env["DB_CONNECTION"] != "" {
+		return "laravel"
+	}
+	return ""
 }

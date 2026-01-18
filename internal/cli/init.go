@@ -27,10 +27,8 @@ Arguments:
 		if len(args) > 1 {
 			path = args[1]
 		} else {
-			path = utils.ExtractRepoName(repo)
+			path = utils.SanitisePath(utils.ExtractRepoName(repo))
 		}
-
-		path = utils.SanitisePath(path)
 
 		absPath, err := filepath.Abs(path)
 		if err != nil {
