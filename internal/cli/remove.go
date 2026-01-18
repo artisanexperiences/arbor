@@ -1,6 +1,14 @@
 package cli
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/michaeldyrynda/arbor/internal/config"
+	"github.com/michaeldyrynda/arbor/internal/git"
+	"github.com/michaeldyrynda/arbor/internal/presets"
+	"github.com/michaeldyrynda/arbor/internal/scaffold"
 	"github.com/spf13/cobra"
 )
 
@@ -17,6 +25,95 @@ Cleanup steps may include:
   - Database cleanup prompts`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		branch := args[0]
+
+		cwd, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("getting current directory: %w", err)
+		}
+
+		barePath, err := git.FindBarePath(cwd)
+		if err != nil {
+			return fmt.Errorf("finding bare repository: %w", err)
+		}
+
+		projectPath := filepath.Dir(barePath)
+		cfg, err := config.LoadProject(projectPath)
+		if err != nil {
+			return fmt.Errorf("loading project config: %w", err)
+		}
+
+		force, _ := cmd.Flags().GetBool("force")
+		dryRun, _ := cmd.Flags().GetBool("dry-run")
+		verbose, _ := cmd.Flags().GetBool("verbose")
+
+		worktrees, err := git.ListWorktrees(barePath)
+		if err != nil {
+			return fmt.Errorf("listing worktrees: %w", err)
+		}
+
+		var targetWorktree *git.Worktree
+		for _, wt := range worktrees {
+			if wt.Branch == branch {
+				targetWorktree = &wt
+				break
+			}
+		}
+
+		if targetWorktree == nil {
+			return fmt.Errorf("worktree '%s' not found", branch)
+		}
+
+		if !force {
+			fmt.Printf("Remove worktree '%s' at %s?\n", branch, targetWorktree.Path)
+			fmt.Print("This will run cleanup steps. Continue? [y/N]: ")
+
+			var response string
+			_, err := fmt.Scanln(&response)
+			if err != nil {
+				return fmt.Errorf("reading confirmation: %w", err)
+			}
+
+			response = string(response[0])
+			if response != "y" && response != "Y" {
+				fmt.Println("Cancelled.")
+				return nil
+			}
+		}
+
+		fmt.Printf("Removing worktree: %s (%s)\n", branch, targetWorktree.Path)
+
+		if !dryRun {
+			presetManager := presets.NewManager()
+			scaffoldManager := scaffold.NewScaffoldManager()
+
+			preset := cfg.Preset
+			if preset == "" {
+				preset = presetManager.Detect(targetWorktree.Path)
+			}
+
+			fmt.Printf("Running cleanup steps for preset: %s\n", preset)
+
+			if err := scaffoldManager.RunCleanup(targetWorktree.Path, branch, preset, cfg, false, verbose); err != nil {
+				fmt.Printf("Warning: cleanup steps failed: %v\n", err)
+			}
+
+			if err := git.RemoveWorktree(targetWorktree.Path, true); err != nil {
+				return fmt.Errorf("removing worktree: %w", err)
+			}
+
+			parentDir := filepath.Dir(targetWorktree.Path)
+			entries, err := os.ReadDir(parentDir)
+			if err == nil && len(entries) == 0 {
+				if err := os.Remove(parentDir); err != nil {
+					fmt.Printf("Warning: could not remove empty directory %s: %v\n", parentDir, err)
+				}
+			}
+		} else {
+			fmt.Println("[DRY RUN] Would run cleanup steps and remove worktree")
+		}
+
+		fmt.Println("Worktree removed successfully.")
 		return nil
 	},
 }

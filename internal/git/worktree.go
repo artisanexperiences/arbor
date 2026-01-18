@@ -1,6 +1,7 @@
 package git
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -173,6 +174,108 @@ func IsMerged(barePath, branch, targetBranch string) (bool, error) {
 		return true, nil
 	}
 	return false, nil
+}
+
+// BranchExists checks if a branch exists in the repository
+func BranchExists(barePath, branch string) bool {
+	cmd := exec.Command("git", "-C", barePath, "rev-parse", "--verify", "--quiet", "refs/heads/"+branch)
+	return cmd.Run() == nil
+}
+
+// ListBranches lists all local branches in the repository (excluding current branch)
+func ListBranches(barePath string) ([]string, error) {
+	cmd := exec.Command("git", "-C", barePath, "branch", "--list")
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
+	var branches []string
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		if strings.HasPrefix(line, "*") {
+			continue
+		}
+		if strings.HasPrefix(line, "+") {
+			line = strings.TrimPrefix(line, "+ ")
+			line = strings.TrimSpace(line)
+		}
+		if line != "" {
+			branches = append(branches, line)
+		}
+	}
+	return branches, nil
+}
+
+// ListAllBranches lists all branches including current branch
+func ListAllBranches(barePath string) ([]string, error) {
+	cmd := exec.Command("git", "-C", barePath, "branch", "--list")
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
+	var branches []string
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(strings.TrimPrefix(line, "* "))
+		if line != "" {
+			branches = append(branches, line)
+		}
+	}
+	return branches, nil
+}
+
+// ListRemoteBranches lists all remote branches in the repository
+func ListRemoteBranches(barePath string) ([]string, error) {
+	cmd := exec.Command("git", "-C", barePath, "branch", "-r", "--list")
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
+	var branches []string
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" {
+			branches = append(branches, line)
+		}
+	}
+	return branches, nil
+}
+
+// FindBarePath finds the bare repository path from a worktree directory
+// by searching for .bare in the current directory or parent directories
+func FindBarePath(worktreePath string) (string, error) {
+	absPath, err := filepath.Abs(worktreePath)
+	if err != nil {
+		return "", err
+	}
+
+	barePath := filepath.Join(absPath, ".bare")
+	if _, err := os.Stat(barePath); err == nil {
+		return barePath, nil
+	}
+
+	// Search parents
+	current := absPath
+	for {
+		barePath = filepath.Join(current, ".bare")
+		if _, err := os.Stat(barePath); err == nil {
+			return barePath, nil
+		}
+
+		parent := filepath.Dir(current)
+		if parent == current {
+			return "", fmt.Errorf(".bare not found in %s or any parent directory", absPath)
+		}
+		current = parent
+	}
 }
 
 // InitFromWorktree converts an existing worktree to a bare repo structure

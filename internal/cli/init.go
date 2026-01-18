@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/michaeldyrynda/arbor/internal/config"
@@ -11,8 +10,6 @@ import (
 	"github.com/michaeldyrynda/arbor/internal/utils"
 	"github.com/spf13/cobra"
 )
-
-var presetManager = presets.NewManager()
 
 var initCmd = &cobra.Command{
 	Use:   "init [REPO] [PATH]",
@@ -108,9 +105,4 @@ func init() {
 
 	initCmd.Flags().String("preset", "", "Project preset (laravel, php)")
 	initCmd.Flags().Bool("interactive", false, "Interactive preset selection")
-}
-
-func isCommandAvailable(name string) bool {
-	_, err := exec.LookPath(name)
-	return err == nil
 }
