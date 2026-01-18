@@ -40,8 +40,12 @@ func init() {
 	for _, b := range binaries {
 		name := b.name
 		binary := b.binary
-		priority := b.priority
+		defaultPriority := b.priority
 		Register(name, func(cfg config.StepConfig) types.ScaffoldStep {
+			priority := defaultPriority
+			if cfg.Priority != 0 {
+				priority = cfg.Priority
+			}
 			return NewBinaryStep(name, binary, cfg.Args, priority)
 		})
 	}

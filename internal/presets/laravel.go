@@ -23,7 +23,7 @@ func NewLaravel() *Laravel {
 				{Name: "php.laravel.artisan", Args: []string{"key:generate"}},
 				{Name: "file.copy", From: ".env.example", To: ".env"},
 				{Name: "php.laravel.artisan", Args: []string{"migrate:fresh", "--seed"}},
-				{Name: "node.npm", Args: []string{"run", "build"}},
+				{Name: "node.npm", Args: []string{"run", "build"}, Priority: 15},
 				{Name: "php.laravel.artisan", Args: []string{"storage:link"}},
 				{Name: "herd", Args: []string{"link", "--secure"}},
 			},
