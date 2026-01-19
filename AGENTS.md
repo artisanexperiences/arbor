@@ -45,6 +45,7 @@ arbor remove feature-my-feature  # When done
 | Utilities | `internal/utils/` |
 | Entry point | `cmd/arbor/main.go` |
 | Tests | Alongside implementation files (`*_test.go`) |
+| Deployment plans | `.ai/plans/` |
 
 ### Config Files
 
@@ -130,10 +131,14 @@ This approach ensures:
 
 ### Add a New CLI Command
 
-1. Create `internal/cli/commandname.go`
-2. Define cobra.Command struct
-3. Add to root in `internal/cli/root.go`
+1. Create `internal/cli/commandname.go` following existing command patterns
+2. Define cobra.Command struct with Use, Short, Long, RunE
+3. Add command to root in `internal/cli/root.go` init function
 4. Add tests in `internal/cli/commandname_test.go`
+5. Update documentation:
+   - Update `.ai/plans/arbor.md` command table
+   - Add full command documentation in `.ai/plans/arbor.md`
+   - Update `README.md` quick start section if needed
 
 ### Add a New Scaffold Step
 
@@ -151,9 +156,15 @@ This approach ensures:
 
 ## Current Phase
 
-**Phase 1: Core Infrastructure** - Complete
+**Phase 5: Distribution** - Complete
 
-See `.ai/plans/arbor.md` for the current phase status and next steps.
+All phases 1-5 are complete. The project has:
+- Core infrastructure (worktree management, config)
+- Scaffold system with presets (Laravel, PHP)
+- Interactive commands (work, prune)
+- Distribution via GitHub Actions
+
+See `.ai/plans/arbor.md` for the detailed phase history and learnings.
 
 ## Notes
 
