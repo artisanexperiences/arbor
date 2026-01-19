@@ -1,7 +1,6 @@
 package presets
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -47,7 +46,7 @@ func (p *Laravel) Detect(path string) bool {
 	}
 
 	composerPath := filepath.Join(path, "composer.json")
-	data, err := ioutil.ReadFile(composerPath)
+	data, err := os.ReadFile(composerPath)
 	if err != nil {
 		return false
 	}

@@ -132,7 +132,9 @@ func (e *ConditionEvaluator) fileContains(value interface{}) (bool, error) {
 
 	switch v := value.(type) {
 	case map[string]interface{}:
-		mapstructure.Decode(v, &config)
+		if err := mapstructure.Decode(v, &config); err != nil {
+			return false, nil
+		}
 	case string:
 		return false, nil
 	}
@@ -207,7 +209,7 @@ func (e *ConditionEvaluator) osMatches(value interface{}) (bool, error) {
 	}
 
 	for _, os := range osList {
-		if strings.ToLower(os) == strings.ToLower(runtime.GOOS) {
+		if strings.EqualFold(os, runtime.GOOS) {
 			return true, nil
 		}
 	}
@@ -249,7 +251,9 @@ func (e *ConditionEvaluator) envFileContains(value interface{}) (bool, error) {
 
 	switch v := value.(type) {
 	case map[string]interface{}:
-		mapstructure.Decode(v, &config)
+		if err := mapstructure.Decode(v, &config); err != nil {
+			return false, nil
+		}
 	case string:
 		config.Key = v
 		config.File = ".env"

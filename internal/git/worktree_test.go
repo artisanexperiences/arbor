@@ -22,6 +22,18 @@ func createTestRepo(t *testing.T) (string, string) {
 		t.Fatalf("initializing git repo: %v", err)
 	}
 
+	cmd = exec.Command("git", "config", "user.email", "test@example.com")
+	cmd.Dir = repoDir
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("setting git user.email: %v", err)
+	}
+
+	cmd = exec.Command("git", "config", "user.name", "Test User")
+	cmd.Dir = repoDir
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("setting git user.name: %v", err)
+	}
+
 	readmePath := filepath.Join(repoDir, "README.md")
 	if err := os.WriteFile(readmePath, []byte("test"), 0644); err != nil {
 		t.Fatalf("writing README: %v", err)

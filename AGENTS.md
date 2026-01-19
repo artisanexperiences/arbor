@@ -94,6 +94,7 @@ go test ./internal/utils/... -v
 - New functionality requires unit tests
 - CLI commands require integration tests
 - All tests must pass before commit
+- Linting must pass before commit (`golangci-lint run ./...`)
 
 ### Test-Driven Development (TDD)
 

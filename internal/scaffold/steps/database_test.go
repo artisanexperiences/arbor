@@ -24,7 +24,9 @@ func TestDatabaseStep(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envFile := filepath.Join(tmpDir, ".env")
-		os.WriteFile(envFile, []byte("APP_NAME=test\n"), 0644)
+		if err := os.WriteFile(envFile, []byte("APP_NAME=test\n"), 0644); err != nil {
+			t.Fatalf("writing env file: %v", err)
+		}
 
 		step := NewDatabaseStep(config.StepConfig{}, 8)
 		ctx := types.ScaffoldContext{
@@ -39,7 +41,9 @@ func TestDatabaseStep(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envFile := filepath.Join(tmpDir, ".env")
-		os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\nDB_DATABASE=testdb\n"), 0644)
+		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\nDB_DATABASE=testdb\n"), 0644); err != nil {
+			t.Fatalf("writing env file: %v", err)
+		}
 
 		step := NewDatabaseStep(config.StepConfig{}, 8)
 		ctx := types.ScaffoldContext{
@@ -54,7 +58,9 @@ func TestDatabaseStep(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envFile := filepath.Join(tmpDir, ".env")
-		os.WriteFile(envFile, []byte("DB_CONNECTION=sqlite\nDB_DATABASE=database/test.sqlite\n"), 0644)
+		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=sqlite\nDB_DATABASE=database/test.sqlite\n"), 0644); err != nil {
+			t.Fatalf("writing env file: %v", err)
+		}
 
 		step := NewDatabaseStep(config.StepConfig{}, 8)
 		ctx := types.ScaffoldContext{
@@ -72,7 +78,9 @@ func TestDatabaseStep(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envFile := filepath.Join(tmpDir, ".env")
-		os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\n"), 0644)
+		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\n"), 0644); err != nil {
+			t.Fatalf("writing env file: %v", err)
+		}
 
 		step := NewDatabaseStep(config.StepConfig{}, 8)
 		ctx := types.ScaffoldContext{

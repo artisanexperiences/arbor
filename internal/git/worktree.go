@@ -112,7 +112,6 @@ func ListWorktrees(barePath string) ([]Worktree, error) {
 					Branch: currentBranch,
 				})
 				currentPath = ""
-				currentBranch = ""
 			}
 		}
 	}

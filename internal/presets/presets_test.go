@@ -1,7 +1,7 @@
 package presets
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -12,7 +12,7 @@ import (
 func TestLaravelPreset_Detect(t *testing.T) {
 	t.Run("detects by artisan file", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		err := ioutil.WriteFile(filepath.Join(tmpDir, "artisan"), []byte("#!/usr/bin/env php"), 0644)
+		err := os.WriteFile(filepath.Join(tmpDir, "artisan"), []byte("#!/usr/bin/env php"), 0644)
 		require.NoError(t, err)
 
 		preset := NewLaravel()
@@ -22,7 +22,7 @@ func TestLaravelPreset_Detect(t *testing.T) {
 	t.Run("detects by composer.json with laravel/framework", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		composerJSON := `{"name": "test/app", "require": {"laravel/framework": "^10.0"}}`
-		err := ioutil.WriteFile(filepath.Join(tmpDir, "composer.json"), []byte(composerJSON), 0644)
+		err := os.WriteFile(filepath.Join(tmpDir, "composer.json"), []byte(composerJSON), 0644)
 		require.NoError(t, err)
 
 		preset := NewLaravel()
@@ -31,7 +31,7 @@ func TestLaravelPreset_Detect(t *testing.T) {
 
 	t.Run("does not detect without laravel indicators", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		err := ioutil.WriteFile(filepath.Join(tmpDir, "composer.json"), []byte(`{"name": "test/app"}`), 0644)
+		err := os.WriteFile(filepath.Join(tmpDir, "composer.json"), []byte(`{"name": "test/app"}`), 0644)
 		require.NoError(t, err)
 
 		preset := NewLaravel()
@@ -92,7 +92,7 @@ func TestLaravelPreset_CleanupSteps(t *testing.T) {
 func TestPHPPreset_Detect(t *testing.T) {
 	t.Run("detects by composer.json", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		err := ioutil.WriteFile(filepath.Join(tmpDir, "composer.json"), []byte(`{"name": "test/app"}`), 0644)
+		err := os.WriteFile(filepath.Join(tmpDir, "composer.json"), []byte(`{"name": "test/app"}`), 0644)
 		require.NoError(t, err)
 
 		preset := NewPHP()
@@ -145,7 +145,7 @@ func TestManager_RegisterAndGet(t *testing.T) {
 
 func TestManager_Detect(t *testing.T) {
 	tmpDir := t.TempDir()
-	err := ioutil.WriteFile(filepath.Join(tmpDir, "artisan"), []byte("#!/usr/bin/env php"), 0644)
+	err := os.WriteFile(filepath.Join(tmpDir, "artisan"), []byte("#!/usr/bin/env php"), 0644)
 	require.NoError(t, err)
 
 	m := NewManager()
@@ -156,7 +156,7 @@ func TestManager_Detect(t *testing.T) {
 func TestManager_Suggest(t *testing.T) {
 	t.Run("returns detected preset", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		err := ioutil.WriteFile(filepath.Join(tmpDir, "artisan"), []byte("#!/usr/bin/env php"), 0644)
+		err := os.WriteFile(filepath.Join(tmpDir, "artisan"), []byte("#!/usr/bin/env php"), 0644)
 		require.NoError(t, err)
 
 		m := NewManager()
@@ -166,7 +166,7 @@ func TestManager_Suggest(t *testing.T) {
 
 	t.Run("returns php for unknown project", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		err := ioutil.WriteFile(filepath.Join(tmpDir, "README.md"), []byte("# Test"), 0644)
+		err := os.WriteFile(filepath.Join(tmpDir, "README.md"), []byte("# Test"), 0644)
 		require.NoError(t, err)
 
 		m := NewManager()

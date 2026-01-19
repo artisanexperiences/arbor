@@ -1,9 +1,10 @@
 package steps
 
 import (
-	"crypto/rand"
+	cryptorand "crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -188,6 +189,8 @@ func (s *DatabaseStep) createMysqlOrPgsql(ctx types.ScaffoldContext, dbType, dbN
 
 func generateDatabaseName() string {
 	bytes := make([]byte, 4)
-	rand.Read(bytes)
+	if _, err := cryptorand.Read(bytes); err != nil {
+		return fmt.Sprintf("app_%d", rand.Int63())
+	}
 	return fmt.Sprintf("app_%s", hex.EncodeToString(bytes))
 }

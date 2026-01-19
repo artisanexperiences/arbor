@@ -50,7 +50,7 @@ func (s *BinaryStep) Priority() int {
 }
 
 func (s *BinaryStep) Condition(ctx types.ScaffoldContext) bool {
-	if s.condition != nil && len(s.condition) > 0 {
+	if len(s.condition) > 0 {
 		evaluator := NewStepConditionEvaluator(ctx)
 		result, err := evaluator.Evaluate(s.condition)
 		if err != nil {
@@ -207,7 +207,9 @@ func (e *StepConditionEvaluator) fileContains(value interface{}) (bool, error) {
 
 	switch v := value.(type) {
 	case map[string]interface{}:
-		mapstructure.Decode(v, &config)
+		if err := mapstructure.Decode(v, &config); err != nil {
+			return false, nil
+		}
 	case string:
 		return false, nil
 	}
@@ -258,7 +260,7 @@ func (e *StepConditionEvaluator) osMatches(value interface{}) (bool, error) {
 	}
 
 	for _, os := range osList {
-		if strings.ToLower(os) == strings.ToLower(runtime.GOOS) {
+		if strings.EqualFold(os, runtime.GOOS) {
 			return true, nil
 		}
 	}
@@ -300,7 +302,9 @@ func (e *StepConditionEvaluator) envFileContains(value interface{}) (bool, error
 
 	switch v := value.(type) {
 	case map[string]interface{}:
-		mapstructure.Decode(v, &config)
+		if err := mapstructure.Decode(v, &config); err != nil {
+			return false, nil
+		}
 	case string:
 		config.Key = v
 		config.File = ".env"
