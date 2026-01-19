@@ -189,6 +189,18 @@ func TestIsMerged(t *testing.T) {
 		t.Fatalf("creating dev branch: %v", err)
 	}
 
+	cmd = exec.Command("git", "config", "user.email", "test@example.com")
+	cmd.Dir = featurePath
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("setting git user.email: %v", err)
+	}
+
+	cmd = exec.Command("git", "config", "user.name", "Test User")
+	cmd.Dir = featurePath
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("setting git user.name: %v", err)
+	}
+
 	readmePath := filepath.Join(featurePath, "README.md")
 	if err := os.WriteFile(readmePath, []byte("test\nfeature"), 0644); err != nil {
 		t.Fatalf("writing README: %v", err)
