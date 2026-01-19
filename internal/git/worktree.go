@@ -51,11 +51,15 @@ func CreateWorktree(barePath, worktreePath, branch, baseBranch string) error {
 	}
 
 	// Branch doesn't exist, create from base
+	// Use the base name of the worktree path as the branch name to ensure
+	// the branch name matches the folder name (e.g., feature-test-change)
+	newBranch := filepath.Base(worktreePath)
+
 	if baseBranch == "" {
 		baseBranch = "main"
 	}
 
-	gitArgs := []string{"-C", barePath, "worktree", "add", "-b", branch, worktreePath, baseBranch}
+	gitArgs := []string{"-C", barePath, "worktree", "add", "-b", newBranch, worktreePath, baseBranch}
 	cmd = exec.Command("git", gitArgs...)
 	return cmd.Run()
 }
@@ -85,6 +89,8 @@ func ListWorktrees(barePath string) ([]Worktree, error) {
 		return nil, err
 	}
 
+	parentDir := filepath.Dir(barePath)
+
 	var worktrees []Worktree
 	var currentPath string
 	var currentBranch string
@@ -98,6 +104,9 @@ func ListWorktrees(barePath string) ([]Worktree, error) {
 		if strings.HasPrefix(line, "worktree ") {
 			currentPath = strings.TrimPrefix(line, "worktree ")
 			currentPath = strings.TrimSpace(currentPath)
+			if parentDir != "" {
+				currentPath = filepath.Join(parentDir, filepath.Base(currentPath))
+			}
 		} else if strings.HasPrefix(line, "branch refs/heads/") {
 			currentBranch = strings.TrimPrefix(line, "branch refs/heads/")
 			currentBranch = strings.TrimSpace(currentBranch)

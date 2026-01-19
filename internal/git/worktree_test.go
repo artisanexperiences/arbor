@@ -253,3 +253,131 @@ func TestFindBarePathParentSearch(t *testing.T) {
 		t.Errorf("expected %s, got %s", barePath, found)
 	}
 }
+
+func TestListWorktrees(t *testing.T) {
+	barePath, _ := createTestRepo(t)
+	projectDir := filepath.Dir(barePath)
+
+	mainPath := filepath.Join(projectDir, "main")
+	if err := CreateWorktree(barePath, mainPath, "main", ""); err != nil {
+		t.Fatalf("creating main worktree: %v", err)
+	}
+
+	featurePath := filepath.Join(projectDir, "feature")
+	if err := CreateWorktree(barePath, featurePath, "feature", "main"); err != nil {
+		t.Fatalf("creating feature worktree: %v", err)
+	}
+
+	worktrees, err := ListWorktrees(barePath)
+	if err != nil {
+		t.Fatalf("listing worktrees: %v", err)
+	}
+
+	if len(worktrees) != 2 {
+		t.Errorf("expected 2 worktrees, got %d", len(worktrees))
+	}
+
+	mainFound := false
+	featureFound := false
+	for _, wt := range worktrees {
+		if wt.Branch == "main" {
+			mainFound = true
+			if wt.Path != mainPath {
+				t.Errorf("main worktree path expected %s, got %s", mainPath, wt.Path)
+			}
+		}
+		if wt.Branch == "feature" {
+			featureFound = true
+			if wt.Path != featurePath {
+				t.Errorf("feature worktree path expected %s, got %s", featurePath, wt.Path)
+			}
+		}
+	}
+
+	if !mainFound {
+		t.Error("main worktree should be in list")
+	}
+	if !featureFound {
+		t.Error("feature worktree should be in list")
+	}
+}
+
+func TestRemoveWorktree(t *testing.T) {
+	barePath, _ := createTestRepo(t)
+	projectDir := filepath.Dir(barePath)
+
+	mainPath := filepath.Join(projectDir, "main")
+	if err := CreateWorktree(barePath, mainPath, "main", ""); err != nil {
+		t.Fatalf("creating main worktree: %v", err)
+	}
+
+	featurePath := filepath.Join(projectDir, "feature")
+	if err := CreateWorktree(barePath, featurePath, "feature", "main"); err != nil {
+		t.Fatalf("creating feature worktree: %v", err)
+	}
+
+	if _, err := os.Stat(featurePath); err != nil {
+		t.Fatalf("feature worktree should exist: %v", err)
+	}
+
+	if err := RemoveWorktree(featurePath, true); err != nil {
+		t.Fatalf("removing worktree: %v", err)
+	}
+
+	if _, err := os.Stat(featurePath); err == nil {
+		t.Error("feature worktree should have been removed")
+	}
+
+	worktrees, err := ListWorktrees(barePath)
+	if err != nil {
+		t.Fatalf("listing worktrees: %v", err)
+	}
+
+	if len(worktrees) != 1 {
+		t.Errorf("expected 1 worktree after removal, got %d", len(worktrees))
+	}
+
+	for _, wt := range worktrees {
+		if wt.Branch == "feature" {
+			t.Error("feature worktree should have been removed from list")
+		}
+	}
+}
+
+func TestCreateWorktreeBranchNaming(t *testing.T) {
+	barePath, _ := createTestRepo(t)
+	projectDir := filepath.Dir(barePath)
+
+	featurePath := filepath.Join(projectDir, "my-feature-branch")
+	if err := CreateWorktree(barePath, featurePath, "original/slash/branch", "main"); err != nil {
+		t.Fatalf("creating worktree: %v", err)
+	}
+
+	worktrees, err := ListWorktrees(barePath)
+	if err != nil {
+		t.Fatalf("listing worktrees: %v", err)
+	}
+
+	found := false
+	for _, wt := range worktrees {
+		if wt.Branch == "my-feature-branch" {
+			found = true
+			if wt.Path != featurePath {
+				t.Errorf("worktree path expected %s, got %s", featurePath, wt.Path)
+			}
+			break
+		}
+	}
+
+	if !found {
+		t.Error("worktree with branch name derived from folder should exist")
+	}
+
+	if BranchExists(barePath, "original/slash/branch") {
+		t.Error("original branch name with slashes should not exist")
+	}
+
+	if !BranchExists(barePath, "my-feature-branch") {
+		t.Error("derived branch name should exist")
+	}
+}
