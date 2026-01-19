@@ -44,6 +44,9 @@ arbor work feature/user-auth
 # Create a worktree from a specific base branch
 arbor work feature/user-auth -b develop
 
+# List all worktrees with their status
+arbor list
+
 # Remove a worktree when done
 arbor remove feature/user-auth
 
