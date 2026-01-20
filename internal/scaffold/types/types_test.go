@@ -3,6 +3,7 @@ package types
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -169,7 +170,30 @@ func TestScaffoldContext_EvaluateCondition(t *testing.T) {
 
 	t.Run("os matches current OS", func(t *testing.T) {
 		result, err := ctx.EvaluateCondition(map[string]interface{}{
-			"os": "linux",
+			"os": runtime.GOOS,
+		})
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if !result {
+			t.Error("expected true for matching OS")
+		}
+	})
+
+	t.Run("os does not match current OS", func(t *testing.T) {
+		var otherOS string
+		switch runtime.GOOS {
+		case "darwin":
+			otherOS = "linux"
+		case "linux":
+			otherOS = "darwin"
+		case "windows":
+			otherOS = "linux"
+		default:
+			otherOS = "freebsd"
+		}
+		result, err := ctx.EvaluateCondition(map[string]interface{}{
+			"os": otherOS,
 		})
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
