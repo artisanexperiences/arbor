@@ -60,7 +60,7 @@ arbor destroy
 ## Documentation
 
 See [AGENTS.md](./AGENTS.md) for development guide.
-See [.ai/plans/arbor.md](./.ai/plans/arbor.md) for complete specification including:
+
 - Command reference
 - Configuration files
 - Scaffold presets
