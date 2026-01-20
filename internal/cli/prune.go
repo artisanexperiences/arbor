@@ -1,15 +1,12 @@
 package cli
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"strconv"
-	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/michaeldyrynda/arbor/internal/git"
+	"github.com/michaeldyrynda/arbor/internal/ui"
 )
 
 var pruneCmd = &cobra.Command{
@@ -35,88 +32,66 @@ interactive review before removal.`,
 		}
 
 		var removable []git.Worktree
-		fmt.Println("Worktree status:")
-		fmt.Println(strings.Repeat("-", 60))
 
 		for _, wt := range worktrees {
 			if wt.Branch == pc.DefaultBranch || wt.Branch == "(bare)" {
-				fmt.Printf("  %-30s %s\n", wt.Branch, wt.Path)
+				ui.PrintInfo(fmt.Sprintf("%s at %s", wt.Branch, wt.Path))
 				continue
 			}
 
 			merged, err := git.IsMerged(pc.BarePath, wt.Branch, pc.DefaultBranch)
 			if err != nil {
-				fmt.Printf("  %-30s %s (error checking merge status)\n", wt.Branch, wt.Path)
+				ui.PrintErrorWithHint(fmt.Sprintf("Error checking %s", wt.Branch), err.Error())
 				continue
 			}
 
 			if merged {
 				removable = append(removable, wt)
-				status := "MERGED"
-				fmt.Printf("  %-30s %s [%s]\n", wt.Branch, wt.Path, status)
+				ui.PrintSuccess(fmt.Sprintf("%s is merged", wt.Branch))
 			} else {
-				fmt.Printf("  %-30s %s [not merged]\n", wt.Branch, wt.Path)
+				ui.PrintInfo(fmt.Sprintf("%s is not merged", wt.Branch))
 			}
 		}
 
-		fmt.Println(strings.Repeat("-", 60))
-
 		if len(removable) == 0 {
-			fmt.Println("No merged worktrees to remove.")
+			ui.PrintDone("No merged worktrees to remove.")
 			return nil
 		}
 
-		fmt.Printf("\n%d merged worktree(s) found.\n", len(removable))
+		ui.PrintInfo(fmt.Sprintf("%d merged worktree(s) found.", len(removable)))
 
 		var toRemove []git.Worktree
 		if force {
 			toRemove = removable
 		} else {
-			fmt.Println("\nSelect worktrees to remove (comma-separated numbers, 'all', 'none'):")
-			for i, wt := range removable {
-				fmt.Printf("  %d. %s (%s)\n", i, wt.Branch, wt.Path)
-			}
-			fmt.Println()
-
-			fmt.Print("Selection: ")
-			reader := bufio.NewReader(os.Stdin)
-			input, err := reader.ReadString('\n')
+			selected, err := ui.SelectWorktreesToPrune(removable)
 			if err != nil {
-				return fmt.Errorf("reading input: %w", err)
+				return fmt.Errorf("selecting worktrees: %w", err)
 			}
-			input = strings.TrimSpace(input)
+			toRemove = selected
 
-			if input == "all" {
-				toRemove = removable
-			} else if input == "none" {
-				fmt.Println("No worktrees removed.")
+			if len(toRemove) == 0 {
+				ui.PrintInfo("No worktrees selected for removal.")
 				return nil
-			} else {
-				parts := strings.Split(input, ",")
-				for _, part := range parts {
-					part = strings.TrimSpace(part)
-					if idx, err := strconv.Atoi(part); err == nil {
-						if idx >= 0 && idx < len(removable) {
-							toRemove = append(toRemove, removable[idx])
-						}
-					}
-				}
+			}
+
+			confirmed, err := ui.ConfirmRemoval(len(toRemove))
+			if err != nil {
+				return fmt.Errorf("confirmation: %w", err)
+			}
+			if !confirmed {
+				ui.PrintInfo("No worktrees removed.")
+				return nil
 			}
 		}
 
-		if len(toRemove) == 0 {
-			fmt.Println("No worktrees selected for removal.")
-			return nil
+		ui.PrintInfo(fmt.Sprintf("Removing %d worktree(s):", len(toRemove)))
+		for _, wt := range toRemove {
+			ui.PrintSuccessPath("Removed", wt.Path)
 		}
 
-		fmt.Printf("\nRemoving %d worktree(s):\n", len(toRemove))
 		for _, wt := range toRemove {
-			fmt.Printf("  - %s (%s)\n", wt.Branch, wt.Path)
-		}
-		fmt.Println()
-
-		for _, wt := range toRemove {
-			fmt.Printf("Removing %s...\n", wt.Branch)
+			ui.PrintStep(fmt.Sprintf("Removing %s...", wt.Branch))
 
 			if !dryRun {
 				preset := pc.Config.Preset
@@ -125,18 +100,18 @@ interactive review before removal.`,
 				}
 
 				if err := pc.ScaffoldManager().RunCleanup(wt.Path, wt.Branch, "", preset, pc.Config, false, verbose); err != nil {
-					fmt.Printf("Warning: cleanup steps failed: %v\n", err)
+					ui.PrintErrorWithHint("Cleanup failed", err.Error())
 				}
 
 				if err := git.RemoveWorktree(wt.Path, true); err != nil {
-					fmt.Printf("Error removing worktree: %v\n", err)
+					ui.PrintErrorWithHint(fmt.Sprintf("Error removing %s", wt.Branch), err.Error())
 				}
 			} else {
-				fmt.Printf("[DRY RUN] Would remove %s and run cleanup\n", wt.Branch)
+				ui.PrintInfo(fmt.Sprintf("[DRY RUN] Would remove %s and run cleanup", wt.Branch))
 			}
 		}
 
-		fmt.Println("\nDone.")
+		ui.PrintDone("Done.")
 		return nil
 	},
 }

@@ -1,16 +1,14 @@
 package cli
 
 import (
-	"bufio"
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/michaeldyrynda/arbor/internal/git"
+	"github.com/michaeldyrynda/arbor/internal/ui"
 	"github.com/michaeldyrynda/arbor/internal/utils"
 )
 
@@ -41,7 +39,14 @@ available branches or entering a new branch name.`,
 		if len(args) > 0 {
 			branch = args[0]
 		} else if interactive {
-			selected, err := selectBranchInteractive(pc.BarePath)
+			localBranches, err := git.ListAllBranches(pc.BarePath)
+			if err != nil {
+				return fmt.Errorf("listing local branches: %w", err)
+			}
+
+			remoteBranches, _ := git.ListRemoteBranches(pc.BarePath)
+
+			selected, err := ui.SelectBranchInteractive(pc.BarePath, localBranches, remoteBranches)
 			if err != nil {
 				return fmt.Errorf("selecting branch: %w", err)
 			}
@@ -114,77 +119,6 @@ available branches or entering a new branch name.`,
 		fmt.Printf("\nWorktree ready at %s\n", absWorktreePath)
 		return nil
 	},
-}
-
-func selectBranchInteractive(barePath string) (string, error) {
-	localBranches, err := git.ListAllBranches(barePath)
-	if err != nil {
-		return "", fmt.Errorf("listing local branches: %w", err)
-	}
-
-	remoteBranches, _ := git.ListRemoteBranches(barePath)
-
-	var allBranches []string
-	allBranches = append(allBranches, "[Create new branch]")
-	allBranches = append(allBranches, "")
-	allBranches = append(allBranches, "Local branches:")
-	for _, b := range localBranches {
-		allBranches = append(allBranches, "  "+b)
-	}
-	if len(remoteBranches) > 0 {
-		allBranches = append(allBranches, "")
-		allBranches = append(allBranches, "Remote branches:")
-		for _, b := range remoteBranches {
-			allBranches = append(allBranches, "  "+b)
-		}
-	}
-
-	fmt.Println("Available branches:")
-	for i, branch := range allBranches {
-		fmt.Printf("  %d. %s\n", i, branch)
-	}
-	fmt.Println()
-
-	fmt.Print("Select a branch number or enter a new branch name: ")
-	reader := bufio.NewReader(os.Stdin)
-	input, err := reader.ReadString('\n')
-	if err != nil {
-		return "", fmt.Errorf("reading input: %w", err)
-	}
-	input = strings.TrimSpace(input)
-
-	if idx, err := parseBranchIndex(input, allBranches); err == nil {
-		if idx == 0 {
-			return promptNewBranch()
-		}
-		branch := allBranches[idx]
-		branch = strings.TrimPrefix(branch, "  ")
-		return branch, nil
-	}
-
-	return input, nil
-}
-
-func parseBranchIndex(input string, branches []string) (int, error) {
-	var idx int
-	_, err := fmt.Sscanf(input, "%d", &idx)
-	if err != nil {
-		return 0, err
-	}
-	if idx < 0 || idx >= len(branches) {
-		return 0, fmt.Errorf("invalid index")
-	}
-	return idx, nil
-}
-
-func promptNewBranch() (string, error) {
-	fmt.Print("Enter new branch name: ")
-	reader := bufio.NewReader(os.Stdin)
-	input, err := reader.ReadString('\n')
-	if err != nil {
-		return "", fmt.Errorf("reading input: %w", err)
-	}
-	return strings.TrimSpace(input), nil
 }
 
 func isCommandAvailable(name string) bool {
