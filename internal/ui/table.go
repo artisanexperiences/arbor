@@ -115,10 +115,10 @@ func formatWorktreeStatus(wt git.Worktree) string {
 	var parts []string
 
 	if wt.IsCurrent {
-		parts = append(parts, SuccessBadge.Render("● current"))
+		parts = append(parts, CurrentWorktreeStyle.Render("● current"))
 	}
 	if wt.IsMain {
-		parts = append(parts, InfoBadge.Render("★ main"))
+		parts = append(parts, MainWorktreeStyle.Render("★ main"))
 	} else if wt.IsMerged {
 		parts = append(parts, MutedStyle.Render("✓ merged"))
 	} else {

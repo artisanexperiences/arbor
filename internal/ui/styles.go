@@ -3,14 +3,14 @@ package ui
 import "github.com/charmbracelet/lipgloss"
 
 var (
-	Primary   = lipgloss.Color("#7C3AED")
-	Secondary = lipgloss.Color("#10B981")
+	Primary   = lipgloss.Color("#4CAF50")
+	Secondary = lipgloss.Color("#A1887F")
 
-	ColorSuccess = lipgloss.Color("#10B981")
-	ColorWarning = lipgloss.Color("#F59E0B")
-	ColorError   = lipgloss.Color("#EF4444")
-	ColorInfo    = lipgloss.Color("#06B6D4")
-	ColorMuted   = lipgloss.Color("#6B7280")
+	ColorSuccess = lipgloss.Color("#66BB6A")
+	ColorWarning = lipgloss.Color("#FFA726")
+	ColorError   = lipgloss.Color("#EF5350")
+	ColorInfo    = lipgloss.Color("#29B6F6")
+	ColorMuted   = lipgloss.Color("#9E9E9E")
 
 	Text    = lipgloss.Color("#F9FAFB")
 	TextDim = lipgloss.Color("#9CA3AF")
@@ -57,4 +57,12 @@ var (
 			Background(ColorInfo).
 			Padding(0, 1).
 			Bold(true)
+
+	MainWorktreeStyle = lipgloss.NewStyle().
+				Foreground(Secondary).
+				Bold(true)
+
+	CurrentWorktreeStyle = lipgloss.NewStyle().
+				Foreground(ColorSuccess).
+				Bold(true)
 )
