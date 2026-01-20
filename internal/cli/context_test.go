@@ -82,11 +82,21 @@ func createTestWorktree(t *testing.T) (string, string) {
 func TestOpenProjectFromCWD_NotInWorktree(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	_, err := OpenProjectFromCWD()
+	originalCWD, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("failed to get current directory: %v", err)
+	}
+	defer func() { _ = os.Chdir(originalCWD) }()
+
+	err = os.Chdir(tmpDir)
+	if err != nil {
+		t.Fatalf("failed to change directory: %v", err)
+	}
+
+	_, err = OpenProjectFromCWD()
 	if err == nil {
 		t.Error("expected error when not in worktree, got nil")
 	}
-	_ = tmpDir
 }
 
 func TestOpenProjectFromCWD_Success(t *testing.T) {
