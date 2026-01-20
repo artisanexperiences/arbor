@@ -127,18 +127,30 @@ func ListWorktreesDetailed(barePath, currentWorktreePath, defaultBranch string) 
 
 	currentWorktreePathEval, _ := filepath.EvalSymlinks(currentWorktreePath)
 
+	mergeStatusCache := make(map[string]bool)
+
 	for i := range worktrees {
 		wt := &worktrees[i]
 		wt.IsMain = wt.Branch == defaultBranch
 		wtPathEval, _ := filepath.EvalSymlinks(wt.Path)
 		wt.IsCurrent = wtPathEval == currentWorktreePathEval
 		if wt.Branch != defaultBranch {
-			featureInDefault, err := IsMerged(barePath, wt.Branch, defaultBranch)
+			cacheKey1 := wt.Branch + "->" + defaultBranch
+			featureInDefault, ok := mergeStatusCache[cacheKey1]
+			if !ok {
+				featureInDefault, err = IsMerged(barePath, wt.Branch, defaultBranch)
+				mergeStatusCache[cacheKey1] = featureInDefault
+			}
 			if err != nil {
 				wt.IsMerged = false
 				continue
 			}
-			defaultInFeature, _ := IsMerged(barePath, defaultBranch, wt.Branch)
+			cacheKey2 := defaultBranch + "->" + wt.Branch
+			defaultInFeature, ok := mergeStatusCache[cacheKey2]
+			if !ok {
+				defaultInFeature, err = IsMerged(barePath, defaultBranch, wt.Branch)
+				mergeStatusCache[cacheKey2] = defaultInFeature
+			}
 			wt.IsMerged = featureInDefault && !defaultInFeature
 		}
 	}
@@ -151,18 +163,28 @@ func SortWorktrees(worktrees []Worktree, by string, reverse bool) []Worktree {
 	sorted := make([]Worktree, len(worktrees))
 	copy(sorted, worktrees)
 
+	var modTimeMap map[string]int64
+	if by == "created" {
+		modTimeMap = make(map[string]int64, len(sorted))
+		for _, wt := range sorted {
+			if info, err := os.Stat(wt.Path); err == nil {
+				modTimeMap[wt.Path] = info.ModTime().UnixNano()
+			}
+		}
+	}
+
 	sort.Slice(sorted, func(i, j int) bool {
 		var cmp int
 		switch by {
 		case "branch":
 			cmp = strings.Compare(sorted[i].Branch, sorted[j].Branch)
 		case "created":
-			infoI, errI := os.Stat(sorted[i].Path)
-			infoJ, errJ := os.Stat(sorted[j].Path)
-			if errI != nil || errJ != nil {
+			timeI := modTimeMap[sorted[i].Path]
+			timeJ := modTimeMap[sorted[j].Path]
+			if timeI == 0 || timeJ == 0 {
 				cmp = strings.Compare(sorted[i].Path, sorted[j].Path)
 			} else {
-				cmp = int(infoI.ModTime().Sub(infoJ.ModTime()).Nanoseconds())
+				cmp = int(timeI - timeJ)
 			}
 		default: // "name"
 			nameI := filepath.Base(sorted[i].Path)
