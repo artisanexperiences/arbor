@@ -10,6 +10,7 @@ import (
 	"github.com/michaeldyrynda/arbor/internal/git"
 	"github.com/michaeldyrynda/arbor/internal/presets"
 	"github.com/michaeldyrynda/arbor/internal/scaffold"
+	"github.com/michaeldyrynda/arbor/internal/ui"
 	"github.com/michaeldyrynda/arbor/internal/utils"
 )
 
@@ -41,11 +42,11 @@ Arguments:
 
 		barePath := filepath.Join(absPath, ".bare")
 
-		fmt.Printf("Cloning repository to %s\n", barePath)
+		ui.PrintStep(fmt.Sprintf("Cloning repository to %s", barePath))
 
 		var cloneErr error
 		if ghAvailable {
-			fmt.Println("Using gh CLI for repository clone")
+			ui.PrintInfo("Using gh CLI for repository clone")
 			cloneErr = git.CloneRepoWithGH(repo, barePath)
 		} else {
 			cloneErr = git.CloneRepo(repo, barePath)
@@ -53,19 +54,21 @@ Arguments:
 		if cloneErr != nil {
 			return fmt.Errorf("cloning repository: %w", cloneErr)
 		}
+		ui.PrintSuccess(fmt.Sprintf("Cloned %s", repo))
 
 		defaultBranch, err := git.GetDefaultBranch(barePath)
 		if err != nil {
 			defaultBranch = config.DefaultBranch
 		}
-		fmt.Printf("Default branch: %s\n", defaultBranch)
+		ui.PrintSuccess(fmt.Sprintf("Default branch: %s", defaultBranch))
 
 		mainPath := filepath.Join(absPath, defaultBranch)
-		fmt.Printf("Creating main worktree at %s\n", mainPath)
+		ui.PrintStep(fmt.Sprintf("Creating main worktree at %s", mainPath))
 
 		if err := git.CreateWorktree(barePath, mainPath, defaultBranch, ""); err != nil {
 			return fmt.Errorf("creating main worktree: %w", err)
 		}
+		ui.PrintSuccess(fmt.Sprintf("Created main worktree at %s", mainPath))
 
 		cfg := &config.Config{
 			DefaultBranch: defaultBranch,
@@ -91,7 +94,7 @@ Arguments:
 			detected := presetManager.Detect(mainPath)
 			if detected != "" {
 				cfg.Preset = detected
-				fmt.Printf("Detected preset: %s\n", detected)
+				ui.PrintSuccess(fmt.Sprintf("Detected: %s", detected))
 			}
 		}
 
@@ -104,15 +107,16 @@ Arguments:
 		repoName := utils.SanitisePath(utils.ExtractRepoName(repo))
 
 		if cfg.Preset != "" && verbose {
-			fmt.Printf("Running scaffold for preset: %s\n", cfg.Preset)
+			ui.PrintInfo(fmt.Sprintf("Running scaffold for preset: %s", cfg.Preset))
 		}
 
 		if err := scaffoldManager.RunScaffold(mainPath, defaultBranch, repoName, cfg.Preset, cfg, false, verbose); err != nil {
-			fmt.Printf("Warning: scaffold steps failed: %v\n", err)
+			ui.PrintErrorWithHint("Scaffold steps failed", err.Error())
 		}
 
-		fmt.Printf("\nArbor project initialised at %s\n", absPath)
-		fmt.Println("Project config saved to arbor.yaml")
+		ui.PrintDone("Repository ready!")
+		ui.PrintInfo(fmt.Sprintf("cd %s", absPath))
+		ui.PrintInfo("arbor work feature/my-feature")
 
 		return nil
 	},

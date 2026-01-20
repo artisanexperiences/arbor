@@ -135,3 +135,21 @@ func ConfirmRemoval(count int) (bool, error) {
 
 	return confirmed, nil
 }
+
+func Confirm(message string) (bool, error) {
+	var confirmed bool
+
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewConfirm().
+				Title(message).
+				Value(&confirmed),
+		),
+	).WithTheme(huh.ThemeCatppuccin())
+
+	if err := form.Run(); err != nil {
+		return false, err
+	}
+
+	return confirmed, nil
+}

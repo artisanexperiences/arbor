@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/michaeldyrynda/arbor/internal/config"
+	"github.com/michaeldyrynda/arbor/internal/ui"
 )
 
 var installCmd = &cobra.Command{
@@ -21,20 +21,14 @@ var installCmd = &cobra.Command{
 Creates the global arbor.yaml configuration file and detects
 available tools (gh, herd, php, composer, npm).`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		verbose := mustGetBool(cmd, "verbose")
-
-		fmt.Printf("Arbor Global Configuration\n")
-		fmt.Printf(strings.Repeat("=", 40) + "\n\n")
+		title := ui.HeaderStyle.Render("Arbor Installation")
 
 		platform := runtime.GOOS
-		fmt.Printf("Platform: %s\n", platform)
 
 		configDir, err := config.GetGlobalConfigDir()
 		if err != nil {
 			return fmt.Errorf("getting config directory: %w", err)
 		}
-
-		fmt.Printf("Config directory: %s\n", configDir)
 
 		if err := os.MkdirAll(configDir, 0755); err != nil {
 			return fmt.Errorf("creating config directory: %w", err)
@@ -44,6 +38,7 @@ available tools (gh, herd, php, composer, npm).`,
 		toolsInfo := make(map[string]config.ToolInfo)
 
 		tools := []string{"gh", "herd", "php", "composer", "npm"}
+		var toolRows [][]string
 		for _, tool := range tools {
 			path, version, err := detectTool(tool)
 			if err == nil && path != "" {
@@ -52,16 +47,10 @@ available tools (gh, herd, php, composer, npm).`,
 					Path:    path,
 					Version: version,
 				}
-				if verbose {
-					fmt.Printf("  %s: %s (version %s)\n", tool, path, version)
-				} else {
-					fmt.Printf("  %s: found\n", tool)
-				}
+				toolRows = append(toolRows, []string{tool, "✓ found", version})
 			} else {
 				detectedTools[tool] = false
-				if verbose {
-					fmt.Printf("  %s: not found\n", tool)
-				}
+				toolRows = append(toolRows, []string{tool, "✗ not found", "-"})
 			}
 		}
 
@@ -79,8 +68,13 @@ available tools (gh, herd, php, composer, npm).`,
 			return fmt.Errorf("saving global config: %w", err)
 		}
 
-		fmt.Printf("\nGlobal configuration saved to %s\n", filepath.Join(configDir, "arbor.yaml"))
-		fmt.Println("\nRun `arbor work` to create a new feature worktree.")
+		fmt.Println(title)
+		fmt.Println()
+		fmt.Printf("Platform: %s\n", platform)
+		fmt.Printf("Config: %s\n", configDir)
+		fmt.Println(ui.RenderStatusTable(toolRows))
+		ui.PrintDone("Configuration saved")
+		ui.PrintInfo("Run `arbor init <repo>` to get started")
 
 		return nil
 	},
