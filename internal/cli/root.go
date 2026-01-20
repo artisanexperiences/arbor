@@ -42,6 +42,7 @@ Commands:
   list      List all worktrees
   remove    Remove a worktree
   prune     Remove merged worktrees
+  destroy   Completely destroy an arbor project
   install   Setup global configuration
 
 Run 'arbor <command> --help' for more information.`

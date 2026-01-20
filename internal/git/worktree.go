@@ -291,6 +291,16 @@ func DeleteBranch(barePath, branch string, force bool) error {
 	return nil
 }
 
+// PruneWorktrees prunes stale worktree refs from the repository
+func PruneWorktrees(barePath string) error {
+	cmd := exec.Command("git", "-C", barePath, "worktree", "prune")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git worktree prune failed: %w\n%s", err, string(output))
+	}
+	return nil
+}
+
 // ListBranches lists all local branches in the repository (excluding current branch)
 func ListBranches(barePath string) ([]string, error) {
 	cmd := exec.Command("git", "-C", barePath, "branch", "--list")
