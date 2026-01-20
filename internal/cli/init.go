@@ -7,6 +7,7 @@ import (
 	"github.com/michaeldyrynda/arbor/internal/config"
 	"github.com/michaeldyrynda/arbor/internal/git"
 	"github.com/michaeldyrynda/arbor/internal/presets"
+	"github.com/michaeldyrynda/arbor/internal/scaffold"
 	"github.com/michaeldyrynda/arbor/internal/utils"
 	"github.com/spf13/cobra"
 )
@@ -72,6 +73,10 @@ Arguments:
 		preset := mustGetString(cmd, "preset")
 		interactive := mustGetBool(cmd, "interactive")
 
+		presetManager := presets.NewManager()
+		scaffoldManager := scaffold.NewScaffoldManager()
+		presets.RegisterAllWithScaffold(scaffoldManager)
+
 		if preset != "" {
 			cfg.Preset = preset
 		} else if interactive {
@@ -114,8 +119,6 @@ Arguments:
 
 func init() {
 	rootCmd.AddCommand(initCmd)
-
-	presets.RegisterAllWithScaffold(scaffoldManager)
 
 	initCmd.Flags().String("preset", "", "Project preset (laravel, php)")
 	initCmd.Flags().Bool("interactive", false, "Interactive preset selection")

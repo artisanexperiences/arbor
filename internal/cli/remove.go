@@ -7,11 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/michaeldyrynda/arbor/internal/config"
 	arborerrors "github.com/michaeldyrynda/arbor/internal/errors"
 	"github.com/michaeldyrynda/arbor/internal/git"
-	"github.com/michaeldyrynda/arbor/internal/presets"
-	"github.com/michaeldyrynda/arbor/internal/scaffold"
 	"github.com/spf13/cobra"
 )
 
@@ -30,27 +27,16 @@ Cleanup steps may include:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		folderName := args[0]
 
-		cwd, err := os.Getwd()
+		pc, err := OpenProjectFromCWD()
 		if err != nil {
-			return fmt.Errorf("getting current directory: %w", err)
-		}
-
-		barePath, err := git.FindBarePath(cwd)
-		if err != nil {
-			return fmt.Errorf("finding bare repository: %w", err)
-		}
-
-		projectPath := filepath.Dir(barePath)
-		cfg, err := config.LoadProject(projectPath)
-		if err != nil {
-			return fmt.Errorf("loading project config: %w", err)
+			return err
 		}
 
 		force := mustGetBool(cmd, "force")
 		dryRun := mustGetBool(cmd, "dry-run")
 		verbose := mustGetBool(cmd, "verbose")
 
-		worktrees, err := git.ListWorktrees(barePath)
+		worktrees, err := git.ListWorktrees(pc.BarePath)
 		if err != nil {
 			return fmt.Errorf("listing worktrees: %w", err)
 		}
@@ -87,18 +73,14 @@ Cleanup steps may include:
 		fmt.Printf("Removing worktree: %s (%s)\n", targetWorktree.Branch, targetWorktree.Path)
 
 		if !dryRun {
-			presetManager := presets.NewManager()
-			scaffoldManager := scaffold.NewScaffoldManager()
-			presets.RegisterAllWithScaffold(scaffoldManager)
-
-			preset := cfg.Preset
+			preset := pc.Config.Preset
 			if preset == "" {
-				preset = presetManager.Detect(targetWorktree.Path)
+				preset = pc.PresetManager().Detect(targetWorktree.Path)
 			}
 
 			fmt.Printf("Running cleanup steps for preset: %s\n", preset)
 
-			if err := scaffoldManager.RunCleanup(targetWorktree.Path, targetWorktree.Branch, "", preset, cfg, false, verbose); err != nil {
+			if err := pc.ScaffoldManager().RunCleanup(targetWorktree.Path, targetWorktree.Branch, "", preset, pc.Config, false, verbose); err != nil {
 				fmt.Printf("Warning: cleanup steps failed: %v\n", err)
 			}
 

@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/michaeldyrynda/arbor/internal/config"
 	"github.com/michaeldyrynda/arbor/internal/git"
 	"github.com/spf13/cobra"
 )
@@ -21,28 +20,9 @@ var listCmd = &cobra.Command{
 Shows worktrees with merge status, current worktree indicator,
 and main branch highlighting.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cwd, err := os.Getwd()
+		pc, err := OpenProjectFromCWD()
 		if err != nil {
-			return fmt.Errorf("getting current directory: %w", err)
-		}
-
-		barePath, err := git.FindBarePath(cwd)
-		if err != nil {
-			return fmt.Errorf("finding bare repository: %w", err)
-		}
-
-		projectPath := filepath.Dir(barePath)
-		cfg, err := config.LoadProject(projectPath)
-		if err != nil {
-			return fmt.Errorf("loading project config: %w", err)
-		}
-
-		defaultBranch := cfg.DefaultBranch
-		if defaultBranch == "" {
-			defaultBranch, _ = git.GetDefaultBranch(barePath)
-			if defaultBranch == "" {
-				defaultBranch = config.DefaultBranch
-			}
+			return err
 		}
 
 		jsonOutput := mustGetBool(cmd, "json")
@@ -50,7 +30,7 @@ and main branch highlighting.`,
 		sortBy := mustGetString(cmd, "sort-by")
 		reverse := mustGetBool(cmd, "reverse")
 
-		worktrees, err := git.ListWorktreesDetailed(barePath, cwd, defaultBranch)
+		worktrees, err := git.ListWorktreesDetailed(pc.BarePath, pc.CWD, pc.DefaultBranch)
 		if err != nil {
 			return fmt.Errorf("listing worktrees: %w", err)
 		}

@@ -22,28 +22,6 @@ type Worktree struct {
 	IsMerged  bool
 }
 
-// BareRepo represents a bare git repository
-type BareRepo struct {
-	Path string
-}
-
-// CreateBareRepo initialises a new bare repository
-func CreateBareRepo(path string) error {
-	if err := os.MkdirAll(path, 0755); err != nil {
-		return err
-	}
-
-	cmd := exec.Command("git", "init", "--bare")
-	cmd.Dir = path
-
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("git init failed: %w\n%s", err, string(output))
-	}
-
-	return nil
-}
-
 // CreateWorktree creates a new worktree from a branch
 func CreateWorktree(barePath, worktreePath, branch, baseBranch string) error {
 	// Create worktree directory parent if needed
@@ -220,17 +198,6 @@ func GetDefaultBranch(barePath string) (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
-// CreateGitFile creates a .git file pointing to the bare repository
-func CreateGitFile(worktreePath, barePath string) error {
-	relPath, err := filepath.Rel(worktreePath, barePath)
-	if err != nil {
-		relPath = barePath
-	}
-
-	content := "gitdir: " + relPath + "\n"
-	return os.WriteFile(filepath.Join(worktreePath, ".git"), []byte(content), 0644)
-}
-
 // CloneRepo clones a repository to a bare directory
 func CloneRepo(repoURL, barePath string) error {
 	if err := os.MkdirAll(barePath, 0755); err != nil {
@@ -378,109 +345,4 @@ func FindBarePath(worktreePath string) (string, error) {
 		}
 		current = parent
 	}
-}
-
-// InitFromWorktree converts an existing worktree to a bare repo structure
-func InitFromWorktree(worktreePath, barePath, defaultBranch string) error {
-	if err := os.MkdirAll(barePath, 0755); err != nil {
-		return err
-	}
-
-	if err := CreateBareRepo(barePath); err != nil {
-		return err
-	}
-
-	cmd := exec.Command("git", "push", "--mirror")
-	cmd.Dir = worktreePath
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("git push --mirror failed: %w\n%s", err, string(output))
-	}
-
-	mainPath := filepath.Join(filepath.Dir(worktreePath), defaultBranch)
-	if err := os.MkdirAll(mainPath, 0755); err != nil {
-		return err
-	}
-
-	if err := CreateWorktree(barePath, mainPath, defaultBranch, ""); err != nil {
-		return err
-	}
-
-	files, err := os.ReadDir(worktreePath)
-	if err != nil {
-		return err
-	}
-
-	for _, file := range files {
-		src := filepath.Join(worktreePath, file.Name())
-		dst := filepath.Join(mainPath, file.Name())
-
-		if src == dst {
-			continue
-		}
-
-		if err := os.Rename(src, dst); err != nil {
-			if err := copyDir(src, dst); err != nil {
-				return err
-			}
-			if err := os.RemoveAll(src); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func copyDir(src, dst string) error {
-	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		relPath, err := filepath.Rel(src, path)
-		if err != nil {
-			return err
-		}
-
-		dstPath := filepath.Join(dst, relPath)
-
-		if info.IsDir() {
-			return os.MkdirAll(dstPath, info.Mode())
-		}
-
-		return copyFile(path, dstPath)
-	})
-}
-
-func copyFile(src, dst string) error {
-	srcFile, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer srcFile.Close()
-
-	srcInfo, err := srcFile.Stat()
-	if err != nil {
-		return err
-	}
-
-	dstFile, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, srcInfo.Mode())
-	if err != nil {
-		return err
-	}
-	defer dstFile.Close()
-
-	_, err = srcFile.Seek(0, 0)
-	if err != nil {
-		return err
-	}
-
-	_, err = dstFile.Seek(0, 0)
-	if err != nil {
-		return err
-	}
-
-	_, err = srcFile.WriteTo(dstFile)
-	return err
 }

@@ -8,16 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/michaeldyrynda/arbor/internal/config"
 	"github.com/michaeldyrynda/arbor/internal/git"
-	"github.com/michaeldyrynda/arbor/internal/presets"
-	"github.com/michaeldyrynda/arbor/internal/scaffold"
 	"github.com/michaeldyrynda/arbor/internal/utils"
 	"github.com/spf13/cobra"
 )
-
-var presetManager = presets.NewManager()
-var scaffoldManager = scaffold.NewScaffoldManager()
 
 var workCmd = &cobra.Command{
 	Use:   "work [BRANCH] [PATH]",
@@ -32,20 +26,9 @@ If no branch is provided, interactive mode allows selection from
 available branches or entering a new branch name.`,
 	Args: cobra.RangeArgs(0, 2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cwd, err := os.Getwd()
+		pc, err := OpenProjectFromCWD()
 		if err != nil {
-			return fmt.Errorf("getting current directory: %w", err)
-		}
-
-		barePath, err := git.FindBarePath(cwd)
-		if err != nil {
-			return fmt.Errorf("finding bare repository: %w", err)
-		}
-
-		projectPath := filepath.Dir(barePath)
-		cfg, err := config.LoadProject(projectPath)
-		if err != nil {
-			return fmt.Errorf("loading project config: %w", err)
+			return err
 		}
 
 		baseBranch := mustGetString(cmd, "base")
@@ -57,7 +40,7 @@ available branches or entering a new branch name.`,
 		if len(args) > 0 {
 			branch = args[0]
 		} else if interactive {
-			selected, err := selectBranchInteractive(barePath)
+			selected, err := selectBranchInteractive(pc.BarePath)
 			if err != nil {
 				return fmt.Errorf("selecting branch: %w", err)
 			}
@@ -69,20 +52,14 @@ available branches or entering a new branch name.`,
 		}
 
 		if baseBranch == "" {
-			baseBranch = cfg.DefaultBranch
-			if baseBranch == "" {
-				baseBranch, _ = git.GetDefaultBranch(barePath)
-				if baseBranch == "" {
-					baseBranch = config.DefaultBranch
-				}
-			}
+			baseBranch = pc.DefaultBranch
 		}
 
 		worktreePath := ""
 		if len(args) > 1 {
 			worktreePath = args[1]
 		} else {
-			worktreePath = filepath.Join(projectPath, utils.SanitisePath(branch))
+			worktreePath = filepath.Join(pc.ProjectPath, utils.SanitisePath(branch))
 		}
 
 		absWorktreePath, err := filepath.Abs(worktreePath)
@@ -90,9 +67,9 @@ available branches or entering a new branch name.`,
 			return fmt.Errorf("getting absolute path: %w", err)
 		}
 
-		exists := git.BranchExists(barePath, branch)
+		exists := git.BranchExists(pc.BarePath, branch)
 		if exists {
-			worktrees, err := git.ListWorktrees(barePath)
+			worktrees, err := git.ListWorktrees(pc.BarePath)
 			if err != nil {
 				return fmt.Errorf("listing worktrees: %w", err)
 			}
@@ -108,7 +85,7 @@ available branches or entering a new branch name.`,
 		fmt.Printf("Path: %s\n", absWorktreePath)
 
 		if !dryRun {
-			if err := git.CreateWorktree(barePath, absWorktreePath, branch, baseBranch); err != nil {
+			if err := git.CreateWorktree(pc.BarePath, absWorktreePath, branch, baseBranch); err != nil {
 				return fmt.Errorf("creating worktree: %w", err)
 			}
 		} else {
@@ -116,9 +93,9 @@ available branches or entering a new branch name.`,
 		}
 
 		if !dryRun {
-			preset := cfg.Preset
+			preset := pc.Config.Preset
 			if preset == "" {
-				preset = presetManager.Detect(absWorktreePath)
+				preset = pc.PresetManager().Detect(absWorktreePath)
 			}
 
 			if verbose {
@@ -126,7 +103,7 @@ available branches or entering a new branch name.`,
 			}
 
 			repoName := filepath.Base(filepath.Dir(absWorktreePath))
-			if err := scaffoldManager.RunScaffold(absWorktreePath, branch, repoName, preset, cfg, false, verbose); err != nil {
+			if err := pc.ScaffoldManager().RunScaffold(absWorktreePath, branch, repoName, preset, pc.Config, false, verbose); err != nil {
 				fmt.Printf("Warning: scaffold steps failed: %v\n", err)
 			}
 		} else {
@@ -216,8 +193,6 @@ func isCommandAvailable(name string) bool {
 
 func init() {
 	rootCmd.AddCommand(workCmd)
-
-	presets.RegisterAllWithScaffold(scaffoldManager)
 
 	workCmd.Flags().StringP("base", "b", "", "Base branch for new worktree")
 	workCmd.Flags().Bool("interactive", false, "Interactive branch selection")

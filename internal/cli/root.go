@@ -12,9 +12,6 @@ var rootCmd = &cobra.Command{
 	Long: `Arbor is a self-contained binary for managing git worktrees
 to assist with agentic development of applications.
 It is cross-project, cross-language, and cross-environment compatible.`,
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		return nil
-	},
 }
 
 func Execute() error {

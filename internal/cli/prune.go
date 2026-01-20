@@ -4,14 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 
-	"github.com/michaeldyrynda/arbor/internal/config"
 	"github.com/michaeldyrynda/arbor/internal/git"
-	"github.com/michaeldyrynda/arbor/internal/presets"
-	"github.com/michaeldyrynda/arbor/internal/scaffold"
 	"github.com/spf13/cobra"
 )
 
@@ -23,37 +19,18 @@ var pruneCmd = &cobra.Command{
 Lists all worktrees, identifies merged ones, and provides an
 interactive review before removal.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cwd, err := os.Getwd()
+		pc, err := OpenProjectFromCWD()
 		if err != nil {
-			return fmt.Errorf("getting current directory: %w", err)
-		}
-
-		barePath, err := git.FindBarePath(cwd)
-		if err != nil {
-			return fmt.Errorf("finding bare repository: %w", err)
-		}
-
-		projectPath := filepath.Dir(barePath)
-		cfg, err := config.LoadProject(projectPath)
-		if err != nil {
-			return fmt.Errorf("loading project config: %w", err)
+			return err
 		}
 
 		force := mustGetBool(cmd, "force")
 		dryRun := mustGetBool(cmd, "dry-run")
 		verbose := mustGetBool(cmd, "verbose")
 
-		worktrees, err := git.ListWorktrees(barePath)
+		worktrees, err := git.ListWorktrees(pc.BarePath)
 		if err != nil {
 			return fmt.Errorf("listing worktrees: %w", err)
-		}
-
-		defaultBranch := cfg.DefaultBranch
-		if defaultBranch == "" {
-			defaultBranch, _ = git.GetDefaultBranch(barePath)
-			if defaultBranch == "" {
-				defaultBranch = config.DefaultBranch
-			}
 		}
 
 		var removable []git.Worktree
@@ -61,12 +38,12 @@ interactive review before removal.`,
 		fmt.Println(strings.Repeat("-", 60))
 
 		for _, wt := range worktrees {
-			if wt.Branch == defaultBranch || wt.Branch == "(bare)" {
+			if wt.Branch == pc.DefaultBranch || wt.Branch == "(bare)" {
 				fmt.Printf("  %-30s %s\n", wt.Branch, wt.Path)
 				continue
 			}
 
-			merged, err := git.IsMerged(barePath, wt.Branch, defaultBranch)
+			merged, err := git.IsMerged(pc.BarePath, wt.Branch, pc.DefaultBranch)
 			if err != nil {
 				fmt.Printf("  %-30s %s (error checking merge status)\n", wt.Branch, wt.Path)
 				continue
@@ -137,20 +114,16 @@ interactive review before removal.`,
 		}
 		fmt.Println()
 
-		presetManager := presets.NewManager()
-		scaffoldManager := scaffold.NewScaffoldManager()
-		presets.RegisterAllWithScaffold(scaffoldManager)
-
 		for _, wt := range toRemove {
 			fmt.Printf("Removing %s...\n", wt.Branch)
 
 			if !dryRun {
-				preset := cfg.Preset
+				preset := pc.Config.Preset
 				if preset == "" {
-					preset = presetManager.Detect(wt.Path)
+					preset = pc.PresetManager().Detect(wt.Path)
 				}
 
-				if err := scaffoldManager.RunCleanup(wt.Path, wt.Branch, "", preset, cfg, false, verbose); err != nil {
+				if err := pc.ScaffoldManager().RunCleanup(wt.Path, wt.Branch, "", preset, pc.Config, false, verbose); err != nil {
 					fmt.Printf("Warning: cleanup steps failed: %v\n", err)
 				}
 
