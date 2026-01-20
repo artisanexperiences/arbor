@@ -88,16 +88,29 @@ Cleanup steps may include:
 				preset = pc.PresetManager().Detect(targetWorktree.Path)
 			}
 
-			ui.PrintInfo(fmt.Sprintf("Running cleanup for preset: %s", preset))
+			if verbose && preset != "" {
+				ui.PrintInfo(fmt.Sprintf("Running cleanup for preset: %s", preset))
+			}
 
-			if err := pc.ScaffoldManager().RunCleanup(targetWorktree.Path, targetWorktree.Branch, "", preset, pc.Config, false, verbose); err != nil {
-				ui.PrintErrorWithHint("Cleanup failed", err.Error())
+			if preset != "" {
+				if err := pc.ScaffoldManager().RunCleanup(targetWorktree.Path, targetWorktree.Branch, "", preset, pc.Config, false, verbose); err != nil {
+					ui.PrintErrorWithHint("Cleanup failed", err.Error())
+				}
 			}
 
 			if err := git.RemoveWorktree(targetWorktree.Path, true); err != nil {
 				return fmt.Errorf("removing worktree: %w", err)
 			}
 			ui.PrintSuccessPath("Removed", targetWorktree.Path)
+
+			deleteBranch := mustGetBool(cmd, "delete-branch")
+			if deleteBranch && git.BranchExists(pc.BarePath, targetWorktree.Branch) {
+				if err := git.DeleteBranch(pc.BarePath, targetWorktree.Branch, force); err != nil {
+					ui.PrintErrorWithHint("Failed to delete branch", err.Error())
+				} else {
+					ui.PrintSuccess(fmt.Sprintf("Deleted branch '%s'", targetWorktree.Branch))
+				}
+			}
 
 			parentDir := filepath.Dir(targetWorktree.Path)
 			entries, err := os.ReadDir(parentDir)
@@ -108,6 +121,9 @@ Cleanup steps may include:
 			}
 		} else {
 			ui.PrintInfo("[DRY RUN] Would run cleanup and remove worktree")
+			if mustGetBool(cmd, "delete-branch") {
+				ui.PrintInfo("[DRY RUN] Would delete branch")
+			}
 		}
 
 		ui.PrintDone("Worktree removed")
@@ -119,4 +135,5 @@ func init() {
 	rootCmd.AddCommand(removeCmd)
 
 	removeCmd.Flags().BoolP("force", "f", false, "Skip confirmation and cleanup prompts")
+	removeCmd.Flags().Bool("delete-branch", false, "Also delete the branch after removing worktree")
 }

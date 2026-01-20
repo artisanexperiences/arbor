@@ -273,6 +273,24 @@ func BranchExists(barePath, branch string) bool {
 	return cmd.Run() == nil
 }
 
+// DeleteBranch deletes a branch from the repository
+func DeleteBranch(barePath, branch string, force bool) error {
+	args := []string{"branch"}
+	if force {
+		args = append(args, "-D")
+	} else {
+		args = append(args, "-d")
+	}
+	args = append(args, branch)
+
+	cmd := exec.Command("git", append([]string{"-C", barePath}, args...)...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("deleting branch: %w\n%s", err, string(output))
+	}
+	return nil
+}
+
 // ListBranches lists all local branches in the repository (excluding current branch)
 func ListBranches(barePath string) ([]string, error) {
 	cmd := exec.Command("git", "-C", barePath, "branch", "--list")
