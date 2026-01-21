@@ -99,15 +99,17 @@ jobs:
       - name: Build release body
         id: release_body
         run: |
-          BODY="${{ steps.tag_annotation.outputs.ANNOTATION }}"
           PREVIOUS="${{ steps.previous_tag.outputs.PREVIOUS }}"
           CURRENT="v${{ steps.version.outputs.VERSION }}"
-          if [ -n "$PREVIOUS" ]; then
-            BODY="${BODY}\n\n**Full changelog:** [$PREVIOUS..$CURRENT](https://github.com/${{ github.repository }}/compare/$PREVIOUS..$CURRENT)"
-          fi
-          echo "BODY<<EOF" >> $GITHUB_OUTPUT
-          echo "$BODY" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          {
+            echo "BODY<<EOF"
+            echo "${{ steps.tag_annotation.outputs.ANNOTATION }}"
+            if [ -n "$PREVIOUS" ]; then
+              echo ""
+              echo "**Full changelog:** [$PREVIOUS..$CURRENT](https://github.com/${{ github.repository }}/compare/$PREVIOUS..$CURRENT)"
+            fi
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
 
       - name: Download artifacts
         uses: actions/download-artifact@v4
