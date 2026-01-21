@@ -32,7 +32,10 @@ func (m *Manager) Get(name string) (Preset, bool) {
 	return preset, ok
 }
 
-// builtInPresets lists all available presets for automatic registration
+// builtInPresets lists all available presets in priority order (most specific first).
+// IMPORTANT: Order matters! More specific presets (e.g., Laravel) must come before
+// generic ones (e.g., PHP) to ensure correct detection. When adding new presets,
+// place them according to specificity (e.g., Next.js before React before JavaScript).
 var builtInPresets = []Preset{
 	NewLaravel(),
 	NewPHP(),
@@ -46,7 +49,10 @@ func RegisterAllWithScaffold(m *scaffold.ScaffoldManager) {
 }
 
 func (m *Manager) Detect(path string) string {
-	for _, preset := range m.presets {
+	// Iterate in priority order (most specific first) using the ordered slice
+	// instead of the map to ensure deterministic detection.
+	// builtInPresets is ordered from most specific (Laravel) to least specific (PHP).
+	for _, preset := range builtInPresets {
 		if preset.Detect(path) {
 			return preset.Name()
 		}
