@@ -2,6 +2,7 @@ package scaffold
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/michaeldyrynda/arbor/internal/config"
 	"github.com/michaeldyrynda/arbor/internal/scaffold/steps"
@@ -139,6 +140,8 @@ func (m *ScaffoldManager) stepsFromConfig(stepConfigs []config.StepConfig) []typ
 }
 
 func (m *ScaffoldManager) RunScaffold(worktreePath, branch, repoName, siteName, preset string, cfg *config.Config, dryRun, verbose bool) error {
+	path := filepath.Base(worktreePath)
+	repoPath := filepath.Base(filepath.Dir(worktreePath))
 	ctx := types.ScaffoldContext{
 		WorktreePath: worktreePath,
 		Branch:       branch,
@@ -146,6 +149,9 @@ func (m *ScaffoldManager) RunScaffold(worktreePath, branch, repoName, siteName, 
 		SiteName:     siteName,
 		Preset:       preset,
 		Env:          make(map[string]string),
+		Path:         path,
+		RepoPath:     repoPath,
+		Vars:         make(map[string]string),
 	}
 
 	stepsList, err := m.GetStepsForWorktree(cfg, worktreePath, branch)
@@ -158,7 +164,7 @@ func (m *ScaffoldManager) RunScaffold(worktreePath, branch, repoName, siteName, 
 		Verbose: verbose,
 	}
 
-	executor := NewStepExecutor(stepsList, ctx, opts)
+	executor := NewStepExecutor(stepsList, &ctx, opts)
 	if err := executor.Execute(); err != nil {
 		return err
 	}
@@ -167,6 +173,8 @@ func (m *ScaffoldManager) RunScaffold(worktreePath, branch, repoName, siteName, 
 }
 
 func (m *ScaffoldManager) RunCleanup(worktreePath, branch, repoName, siteName, preset string, cfg *config.Config, dryRun, verbose bool) error {
+	path := filepath.Base(worktreePath)
+	repoPath := filepath.Base(filepath.Dir(worktreePath))
 	ctx := types.ScaffoldContext{
 		WorktreePath: worktreePath,
 		Branch:       branch,
@@ -174,6 +182,9 @@ func (m *ScaffoldManager) RunCleanup(worktreePath, branch, repoName, siteName, p
 		SiteName:     siteName,
 		Preset:       preset,
 		Env:          make(map[string]string),
+		Path:         path,
+		RepoPath:     repoPath,
+		Vars:         make(map[string]string),
 	}
 
 	stepsList, err := m.GetCleanupSteps(cfg, worktreePath, branch)
@@ -186,7 +197,7 @@ func (m *ScaffoldManager) RunCleanup(worktreePath, branch, repoName, siteName, p
 		Verbose: verbose,
 	}
 
-	executor := NewStepExecutor(stepsList, ctx, opts)
+	executor := NewStepExecutor(stepsList, &ctx, opts)
 	if err := executor.Execute(); err != nil {
 		return err
 	}

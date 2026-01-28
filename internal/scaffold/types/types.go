@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/go-viper/mapstructure/v2"
 
@@ -19,6 +20,11 @@ type ScaffoldContext struct {
 	SiteName     string
 	Preset       string
 	Env          map[string]string
+	Path         string
+	RepoPath     string
+	DbSuffix     string
+	Vars         map[string]string
+	mu           sync.RWMutex
 }
 
 type StepOptions struct {
@@ -29,7 +35,7 @@ type StepOptions struct {
 
 type ScaffoldStep interface {
 	Name() string
-	Run(ctx ScaffoldContext, opts StepOptions) error
+	Run(ctx *ScaffoldContext, opts StepOptions) error
 	Priority() int
 	Condition(ctx ScaffoldContext) bool
 }
@@ -288,4 +294,48 @@ func (ctx *ScaffoldContext) envFileMissing(value interface{}) (bool, error) {
 		return false, err
 	}
 	return !contains, nil
+}
+
+func (ctx *ScaffoldContext) SetVar(key, value string) {
+	ctx.mu.Lock()
+	defer ctx.mu.Unlock()
+	if ctx.Vars == nil {
+		ctx.Vars = make(map[string]string)
+	}
+	ctx.Vars[key] = value
+}
+
+func (ctx *ScaffoldContext) GetVar(key string) string {
+	ctx.mu.RLock()
+	defer ctx.mu.RUnlock()
+	return ctx.Vars[key]
+}
+
+func (ctx *ScaffoldContext) SetDbSuffix(suffix string) {
+	ctx.mu.Lock()
+	defer ctx.mu.Unlock()
+	ctx.DbSuffix = suffix
+}
+
+func (ctx *ScaffoldContext) GetDbSuffix() string {
+	ctx.mu.RLock()
+	defer ctx.mu.RUnlock()
+	return ctx.DbSuffix
+}
+
+func (ctx *ScaffoldContext) SnapshotForTemplate() map[string]string {
+	ctx.mu.RLock()
+	defer ctx.mu.RUnlock()
+	snapshot := map[string]string{
+		"Path":     ctx.Path,
+		"RepoPath": ctx.RepoPath,
+		"RepoName": ctx.RepoName,
+		"SiteName": ctx.SiteName,
+		"Branch":   ctx.Branch,
+		"DbSuffix": ctx.DbSuffix,
+	}
+	for k, v := range ctx.Vars {
+		snapshot[k] = v
+	}
+	return snapshot
 }

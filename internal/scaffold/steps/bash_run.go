@@ -19,7 +19,7 @@ func (s *BashRunStep) Name() string {
 	return "bash.run"
 }
 
-func (s *BashRunStep) Run(ctx types.ScaffoldContext, opts types.StepOptions) error {
+func (s *BashRunStep) Run(ctx *types.ScaffoldContext, opts types.StepOptions) error {
 	cmd := exec.Command("bash", "-c", s.command)
 	cmd.Dir = ctx.WorktreePath
 	output, err := cmd.CombinedOutput()

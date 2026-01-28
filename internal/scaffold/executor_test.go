@@ -21,7 +21,7 @@ func (s *mockStep) Name() string {
 	return s.name
 }
 
-func (s *mockStep) Run(ctx types.ScaffoldContext, opts types.StepOptions) error {
+func (s *mockStep) Run(ctx *types.ScaffoldContext, opts types.StepOptions) error {
 	s.runCalled = true
 	return s.runError
 }
@@ -35,7 +35,7 @@ func (s *mockStep) Condition(ctx types.ScaffoldContext) bool {
 }
 
 func TestStepExecutor_SortByPriority(t *testing.T) {
-	ctx := types.ScaffoldContext{
+	ctx := &types.ScaffoldContext{
 		WorktreePath: "/tmp",
 		Branch:       "test",
 	}
@@ -59,7 +59,7 @@ func TestStepExecutor_SortByPriority(t *testing.T) {
 }
 
 func TestStepExecutor_GroupByPriority(t *testing.T) {
-	ctx := types.ScaffoldContext{
+	ctx := &types.ScaffoldContext{
 		WorktreePath: "/tmp",
 		Branch:       "test",
 	}
@@ -87,7 +87,7 @@ func TestStepExecutor_GroupByPriority(t *testing.T) {
 }
 
 func TestStepExecutor_Execute_AllStepsPass(t *testing.T) {
-	ctx := types.ScaffoldContext{
+	ctx := &types.ScaffoldContext{
 		WorktreePath: "/tmp",
 		Branch:       "test",
 	}
@@ -108,7 +108,7 @@ func TestStepExecutor_Execute_AllStepsPass(t *testing.T) {
 }
 
 func TestStepExecutor_Execute_ConditionFalse(t *testing.T) {
-	ctx := types.ScaffoldContext{
+	ctx := &types.ScaffoldContext{
 		WorktreePath: "/tmp",
 		Branch:       "test",
 	}
@@ -129,7 +129,7 @@ func TestStepExecutor_Execute_ConditionFalse(t *testing.T) {
 }
 
 func TestStepExecutor_Execute_StepFails(t *testing.T) {
-	ctx := types.ScaffoldContext{
+	ctx := &types.ScaffoldContext{
 		WorktreePath: "/tmp",
 		Branch:       "test",
 	}
@@ -149,7 +149,7 @@ func TestStepExecutor_Execute_StepFails(t *testing.T) {
 }
 
 func TestStepExecutor_Execute_DryRun(t *testing.T) {
-	ctx := types.ScaffoldContext{
+	ctx := &types.ScaffoldContext{
 		WorktreePath: "/tmp",
 		Branch:       "test",
 	}
@@ -168,7 +168,7 @@ func TestStepExecutor_Execute_DryRun(t *testing.T) {
 }
 
 func TestStepExecutor_Results(t *testing.T) {
-	ctx := types.ScaffoldContext{
+	ctx := &types.ScaffoldContext{
 		WorktreePath: "/tmp",
 		Branch:       "test",
 	}
@@ -208,7 +208,7 @@ func TestStepExecutor_Results(t *testing.T) {
 }
 
 func TestStepExecutor_ParallelExecution_SamePriority(t *testing.T) {
-	ctx := types.ScaffoldContext{
+	ctx := &types.ScaffoldContext{
 		WorktreePath: "/tmp",
 		Branch:       "test",
 	}
@@ -236,7 +236,7 @@ func TestStepExecutor_ParallelExecution_SamePriority(t *testing.T) {
 }
 
 func TestStepExecutor_ParallelExecution_ErrorPropagation(t *testing.T) {
-	ctx := types.ScaffoldContext{
+	ctx := &types.ScaffoldContext{
 		WorktreePath: "/tmp",
 		Branch:       "test",
 	}
@@ -260,7 +260,7 @@ func TestStepExecutor_ParallelExecution_ErrorPropagation(t *testing.T) {
 }
 
 func TestStepExecutor_ParallelExecution_RaceCondition(t *testing.T) {
-	ctx := types.ScaffoldContext{
+	ctx := &types.ScaffoldContext{
 		WorktreePath: "/tmp",
 		Branch:       "test",
 	}

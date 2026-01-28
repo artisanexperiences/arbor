@@ -19,7 +19,7 @@ func (s *CommandRunStep) Name() string {
 	return "command.run"
 }
 
-func (s *CommandRunStep) Run(ctx types.ScaffoldContext, opts types.StepOptions) error {
+func (s *CommandRunStep) Run(ctx *types.ScaffoldContext, opts types.StepOptions) error {
 	cmd := exec.Command("sh", "-c", s.command)
 	cmd.Dir = ctx.WorktreePath
 	output, err := cmd.CombinedOutput()

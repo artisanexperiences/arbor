@@ -40,7 +40,7 @@ func (s *DatabaseStep) Condition(ctx types.ScaffoldContext) bool {
 	return true
 }
 
-func (s *DatabaseStep) Run(ctx types.ScaffoldContext, opts types.StepOptions) error {
+func (s *DatabaseStep) Run(ctx *types.ScaffoldContext, opts types.StepOptions) error {
 	dbType := ""
 	dbName := ""
 
@@ -77,7 +77,7 @@ func (s *DatabaseStep) Run(ctx types.ScaffoldContext, opts types.StepOptions) er
 	return s.createMysqlOrPgsql(ctx, dbType, dbName, opts)
 }
 
-func (s *DatabaseStep) createSqlite(ctx types.ScaffoldContext, dbName string, opts types.StepOptions) error {
+func (s *DatabaseStep) createSqlite(ctx *types.ScaffoldContext, dbName string, opts types.StepOptions) error {
 	if dbName == "" {
 		dbName = "database/database.sqlite"
 	}
@@ -108,7 +108,7 @@ func (s *DatabaseStep) createSqlite(ctx types.ScaffoldContext, dbName string, op
 	return nil
 }
 
-func (s *DatabaseStep) createMysqlOrPgsql(ctx types.ScaffoldContext, dbType, dbName string, opts types.StepOptions) error {
+func (s *DatabaseStep) createMysqlOrPgsql(ctx *types.ScaffoldContext, dbType, dbName string, opts types.StepOptions) error {
 	if dbName == "" {
 		dbName = generateDatabaseName()
 	}

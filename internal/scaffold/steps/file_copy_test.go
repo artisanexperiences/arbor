@@ -22,7 +22,7 @@ func TestFileCopyStep(t *testing.T) {
 		assert.NoError(t, err)
 
 		step := NewFileCopyStep("source.txt", "destination.txt")
-		ctx := types.ScaffoldContext{
+		ctx := &types.ScaffoldContext{
 			WorktreePath: tmpDir,
 		}
 
@@ -44,7 +44,7 @@ func TestFileCopyStep(t *testing.T) {
 		assert.NoError(t, err)
 
 		step := NewFileCopyStep(".env.example", ".env")
-		ctx := types.ScaffoldContext{
+		ctx := &types.ScaffoldContext{
 			WorktreePath: tmpDir,
 		}
 
@@ -62,29 +62,29 @@ func TestFileCopyStep(t *testing.T) {
 		assert.NoError(t, err)
 
 		step := NewFileCopyStep("source.txt", "destination.txt")
-		ctx := types.ScaffoldContext{
+		ctx := &types.ScaffoldContext{
 			WorktreePath: tmpDir,
 		}
 
-		assert.True(t, step.Condition(ctx))
+		assert.True(t, step.Condition(*ctx))
 	})
 
 	t.Run("condition returns false when source file does not exist", func(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		step := NewFileCopyStep("nonexistent.txt", "destination.txt")
-		ctx := types.ScaffoldContext{
+		ctx := &types.ScaffoldContext{
 			WorktreePath: tmpDir,
 		}
 
-		assert.False(t, step.Condition(ctx))
+		assert.False(t, step.Condition(*ctx))
 	})
 
 	t.Run("returns error when source file does not exist", func(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		step := NewFileCopyStep("nonexistent.txt", "destination.txt")
-		ctx := types.ScaffoldContext{
+		ctx := &types.ScaffoldContext{
 			WorktreePath: tmpDir,
 		}
 

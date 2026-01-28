@@ -16,14 +16,14 @@ type ExecutionResult struct {
 
 type StepExecutor struct {
 	steps   []types.ScaffoldStep
-	ctx     types.ScaffoldContext
+	ctx     *types.ScaffoldContext
 	opts    types.StepOptions
 	results []ExecutionResult
 	mu      sync.Mutex
 	errMu   sync.Mutex
 }
 
-func NewStepExecutor(steps []types.ScaffoldStep, ctx types.ScaffoldContext, opts types.StepOptions) *StepExecutor {
+func NewStepExecutor(steps []types.ScaffoldStep, ctx *types.ScaffoldContext, opts types.StepOptions) *StepExecutor {
 	return &StepExecutor{
 		steps: steps,
 		ctx:   ctx,
@@ -143,7 +143,7 @@ func (e *StepExecutor) executeStep(step types.ScaffoldStep) error {
 		return nil
 	}
 
-	if step.Condition(e.ctx) {
+	if step.Condition(*e.ctx) {
 		if e.opts.Verbose {
 			fmt.Printf("Executing step: %s\n", step.Name())
 		}

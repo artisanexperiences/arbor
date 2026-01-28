@@ -14,11 +14,11 @@ import (
 func TestDatabaseStep(t *testing.T) {
 	t.Run("condition always returns true - controlled by preset", func(t *testing.T) {
 		step := NewDatabaseStep(config.StepConfig{}, 8)
-		ctx := types.ScaffoldContext{
+		ctx := &types.ScaffoldContext{
 			WorktreePath: t.TempDir(),
 		}
 
-		assert.True(t, step.Condition(ctx))
+		assert.True(t, step.Condition(*ctx))
 	})
 
 	t.Run("skips when no DB_CONNECTION in env file", func(t *testing.T) {
@@ -30,7 +30,7 @@ func TestDatabaseStep(t *testing.T) {
 		}
 
 		step := NewDatabaseStep(config.StepConfig{}, 8)
-		ctx := types.ScaffoldContext{
+		ctx := &types.ScaffoldContext{
 			WorktreePath: tmpDir,
 		}
 
@@ -47,7 +47,7 @@ func TestDatabaseStep(t *testing.T) {
 		}
 
 		step := NewDatabaseStep(config.StepConfig{}, 8)
-		ctx := types.ScaffoldContext{
+		ctx := &types.ScaffoldContext{
 			WorktreePath: tmpDir,
 		}
 
@@ -64,7 +64,7 @@ func TestDatabaseStep(t *testing.T) {
 		}
 
 		step := NewDatabaseStep(config.StepConfig{}, 8)
-		ctx := types.ScaffoldContext{
+		ctx := &types.ScaffoldContext{
 			WorktreePath: tmpDir,
 		}
 
@@ -84,7 +84,7 @@ func TestDatabaseStep(t *testing.T) {
 		}
 
 		step := NewDatabaseStep(config.StepConfig{}, 8)
-		ctx := types.ScaffoldContext{
+		ctx := &types.ScaffoldContext{
 			WorktreePath: tmpDir,
 		}
 
@@ -98,7 +98,7 @@ func TestDatabaseStep(t *testing.T) {
 		step := NewDatabaseStep(config.StepConfig{
 			Args: []string{"--type", "sqlite", "--database", "custom.db"},
 		}, 8)
-		ctx := types.ScaffoldContext{
+		ctx := &types.ScaffoldContext{
 			WorktreePath: tmpDir,
 		}
 

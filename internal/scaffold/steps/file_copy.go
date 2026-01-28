@@ -26,7 +26,7 @@ func (s *FileCopyStep) Name() string {
 	return "file.copy"
 }
 
-func (s *FileCopyStep) Run(ctx types.ScaffoldContext, opts types.StepOptions) error {
+func (s *FileCopyStep) Run(ctx *types.ScaffoldContext, opts types.StepOptions) error {
 	fromPath := filepath.Join(ctx.WorktreePath, s.from)
 	toPath := filepath.Join(ctx.WorktreePath, s.to)
 
