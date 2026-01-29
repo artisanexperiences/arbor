@@ -66,6 +66,11 @@ jobs:
       - name: Start PostgreSQL
         run: sudo systemctl start postgresql.service
 
+      - name: Configure PostgreSQL for password auth
+        run: |
+          sudo sed -i 's/local   all             peer/local   all             md5/' /etc/postgresql/*/main/pg_hba.conf
+          sudo systemctl reload postgresql
+
       - name: Debug MySQL connection
         run: |
           echo "Testing MySQL connection..."
