@@ -78,6 +78,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Fetch tags with annotations
+        run: git fetch --tags --force
+
       - name: Get version
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
