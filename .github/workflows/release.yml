@@ -106,6 +106,7 @@ jobs:
             echo "${{ steps.tag_annotation.outputs.ANNOTATION }}"
             if [ -n "$PREVIOUS" ]; then
               echo ""
+              echo ""
               echo "**Full changelog:** [$PREVIOUS..$CURRENT](https://github.com/${{ github.repository }}/compare/$PREVIOUS..$CURRENT)"
             fi
             echo "EOF"
