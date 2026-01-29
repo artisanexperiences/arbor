@@ -33,6 +33,7 @@ var binaries = []binaryDefinition{
 	{"node.npm", "npm", 10},
 	{"node.yarn", "yarn", 10},
 	{"node.pnpm", "pnpm", 10},
+	{"node.bun", "bun", 10},
 	{"herd", "herd", 60},
 }
 
@@ -62,6 +63,12 @@ func init() {
 	})
 	Register("command.run", func(cfg config.StepConfig) types.ScaffoldStep {
 		return NewCommandRunStep(cfg.Command)
+	})
+	Register("env.read", func(cfg config.StepConfig) types.ScaffoldStep {
+		return NewEnvReadStep(cfg)
+	})
+	Register("env.write", func(cfg config.StepConfig) types.ScaffoldStep {
+		return NewEnvWriteStep(cfg)
 	})
 	Register("db.create", func(cfg config.StepConfig) types.ScaffoldStep {
 		priority := 8
