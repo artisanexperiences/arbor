@@ -180,9 +180,6 @@ func (c *PostgreSQLClient) DropDatabase(name string) error {
 }
 
 func (c *PostgreSQLClient) ListDatabases(pattern string) ([]string, error) {
-	likePattern := strings.ReplaceAll(pattern, "%", "%%")
-	likePattern = strings.ReplaceAll(likePattern, "*", "%")
-
 	query := "SELECT datname FROM pg_database WHERE datname LIKE $1 AND datistemplate = false"
 	rows, err := c.db.Query(query, pattern)
 	if err != nil {
