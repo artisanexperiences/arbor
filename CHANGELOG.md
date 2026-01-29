@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-01-29
+
+### Fixed
+- Database naming now uses sanitized site name to handle hyphenated branch names correctly
+- Laravel preset writes DB_DATABASE to .env after database creation to ensure migrations run against correct database
+- Default branch worktrees now use saved SiteName instead of folder name to prevent Herd link collisions
+- Scaffold command now correctly detects when running from project root vs worktree
+- env.write step race conditions resolved with file locking for concurrent execution
+- env.write now respects configured priority and creates parent directories as needed
+
+### Changed
+- Removed priority system in favor of sequential step execution for predictable ordering
+- Steps now execute in the exact order they appear in configuration
+
+## [0.3.0] - 2026-01-28
+
+### Added
+- New scaffold steps: env.read, env.write, db.create, db.destroy
+- Template variable system with dynamic substitution using Go's text/template
+- Built-in template variables: Path, RepoPath, RepoName, SiteName, Branch, DbSuffix, SanitizedSiteName
+- Custom variables from env.read steps available to subsequent steps
+- Support for multiple databases with shared suffix generation
+- DatabaseClient abstraction with mock support for testing
+- Readable database name generation using adjective_noun word lists
+- Automatic retry on database name collisions (up to 5 attempts)
+- Persistent suffix storage in worktree-local config for cleanup
+- Support for MySQL, PostgreSQL, and SQLite
+
+### Improved
+- Mock implementations for database operations eliminate need for containerized tests
+- Improved test coverage across scaffold steps
+
 ## [0.2.0] - 2026-01-20
 
 ### Major Changes
@@ -72,6 +104,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Interactive commands (work, prune)
 - Multi-platform builds and CI/CD
 
+[0.3.1]: https://github.com/michaeldyrynda/arbor/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/michaeldyrynda/arbor/compare/v0.2.4...v0.3.0
 [0.2.0]: https://github.com/michaeldyrynda/arbor/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/michaeldyrynda/arbor/compare/v0.0.2...v0.1.0
 [0.0.2]: https://github.com/michaeldyrynda/arbor/compare/v0.0.1...v0.0.2
