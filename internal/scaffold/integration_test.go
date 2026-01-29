@@ -278,7 +278,7 @@ APP_NAME=myapp
 		cfg := &config.Config{Preset: ""}
 		manager := NewScaffoldManager()
 
-		err = manager.RunScaffold(tmpDir, "test", "myrepo", "myapp", "", cfg, false, false)
+		err = manager.RunScaffold(tmpDir, "test", "myrepo", "myapp", "", cfg, false, false, false)
 		require.NoError(t, err)
 
 		cfgAfter, err := config.ReadWorktreeConfig(tmpDir)
@@ -301,7 +301,7 @@ APP_NAME=myapp
 		cfg := &config.Config{Preset: ""}
 		manager := NewScaffoldManager()
 
-		err := manager.RunScaffold(tmpDir, "test", "myrepo", "myapp", "", cfg, false, false)
+		err := manager.RunScaffold(tmpDir, "test", "myrepo", "myapp", "", cfg, false, false, false)
 		require.NoError(t, err)
 
 		cfgAfter, err := config.ReadWorktreeConfig(tmpDir)

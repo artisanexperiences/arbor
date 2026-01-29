@@ -32,6 +32,7 @@ a worktree to scaffold.`,
 
 		dryRun := mustGetBool(cmd, "dry-run")
 		verbose := mustGetBool(cmd, "verbose")
+		quiet := mustGetBool(cmd, "quiet")
 
 		worktrees, err := git.ListWorktreesDetailed(pc.BarePath, pc.CWD, pc.DefaultBranch)
 		if err != nil {
@@ -135,7 +136,7 @@ a worktree to scaffold.`,
 			siteName = pc.Config.SiteName
 		}
 
-		if err := pc.ScaffoldManager().RunScaffold(selectedWorktree.Path, selectedWorktree.Branch, repoName, siteName, preset, pc.Config, dryRun, verbose); err != nil {
+		if err := pc.ScaffoldManager().RunScaffold(selectedWorktree.Path, selectedWorktree.Branch, repoName, siteName, preset, pc.Config, dryRun, verbose, quiet); err != nil {
 			ui.PrintErrorWithHint("Scaffold steps failed", err.Error())
 			return err
 		}

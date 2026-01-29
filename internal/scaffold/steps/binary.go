@@ -39,6 +39,10 @@ func (s *BinaryStep) Name() string {
 	return s.name
 }
 
+func (s *BinaryStep) GetArgs() []string {
+	return s.args
+}
+
 func (s *BinaryStep) Condition(ctx *types.ScaffoldContext) bool {
 	if len(s.condition) > 0 {
 		result, err := ctx.EvaluateCondition(s.condition)

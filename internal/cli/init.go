@@ -120,6 +120,7 @@ Arguments:
 		}
 
 		verbose := mustGetBool(cmd, "verbose")
+		quiet := mustGetBool(cmd, "quiet")
 		skipScaffold := mustGetBool(cmd, "skip-scaffold")
 
 		if !skipScaffold && cfg.Preset != "" && verbose {
@@ -127,7 +128,7 @@ Arguments:
 		}
 
 		if !skipScaffold {
-			if err := scaffoldManager.RunScaffold(mainPath, defaultBranch, repoName, cfg.SiteName, cfg.Preset, cfg, false, verbose); err != nil {
+			if err := scaffoldManager.RunScaffold(mainPath, defaultBranch, repoName, cfg.SiteName, cfg.Preset, cfg, false, verbose, quiet); err != nil {
 				ui.PrintErrorWithHint("Scaffold steps failed", err.Error())
 			}
 		} else {

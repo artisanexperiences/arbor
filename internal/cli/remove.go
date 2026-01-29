@@ -33,6 +33,7 @@ Cleanup steps may include:
 		force := mustGetBool(cmd, "force")
 		dryRun := mustGetBool(cmd, "dry-run")
 		verbose := mustGetBool(cmd, "verbose")
+		quiet := mustGetBool(cmd, "quiet")
 
 		currentWorktreePath, err := os.Getwd()
 		if err != nil {
@@ -118,7 +119,7 @@ Cleanup steps may include:
 
 			if preset != "" {
 				siteName := filepath.Base(targetWorktree.Path)
-				if err := pc.ScaffoldManager().RunCleanup(targetWorktree.Path, targetWorktree.Branch, "", siteName, preset, pc.Config, false, verbose); err != nil {
+				if err := pc.ScaffoldManager().RunCleanup(targetWorktree.Path, targetWorktree.Branch, "", siteName, preset, pc.Config, false, verbose, quiet); err != nil {
 					ui.PrintErrorWithHint("Cleanup failed", err.Error())
 				}
 			}

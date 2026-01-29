@@ -32,6 +32,7 @@ type StepOptions struct {
 	Args    []string
 	DryRun  bool
 	Verbose bool
+	Quiet   bool
 }
 
 type ScaffoldStep interface {

@@ -49,6 +49,7 @@ preset: ""
 		cmd.Flags().Bool("force", false, "")
 		cmd.Flags().Bool("dry-run", false, "")
 		cmd.Flags().Bool("verbose", false, "")
+		cmd.Flags().Bool("quiet", false, "")
 		cmd.SetArgs([]string{"main"})
 
 		originalDir, err := os.Getwd()
@@ -69,6 +70,7 @@ preset: ""
 		cmd.Flags().Bool("force", false, "")
 		cmd.Flags().Bool("dry-run", false, "")
 		cmd.Flags().Bool("verbose", false, "")
+		cmd.Flags().Bool("quiet", false, "")
 		cmd.SetArgs([]string{filepath.Base(mainPath)})
 
 		originalDir, err := os.Getwd()
@@ -88,6 +90,7 @@ preset: ""
 		cmd.Flags().Bool("force", true, "")
 		cmd.Flags().Bool("dry-run", false, "")
 		cmd.Flags().Bool("verbose", false, "")
+		cmd.Flags().Bool("quiet", false, "")
 		cmd.Flags().Bool("delete-branch", false, "")
 
 		originalDir, err := os.Getwd()

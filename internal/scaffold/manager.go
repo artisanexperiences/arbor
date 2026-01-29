@@ -140,7 +140,7 @@ func (m *ScaffoldManager) stepsFromConfig(stepConfigs []config.StepConfig) []typ
 	return stepsList
 }
 
-func (m *ScaffoldManager) RunScaffold(worktreePath, branch, repoName, siteName, preset string, cfg *config.Config, dryRun, verbose bool) error {
+func (m *ScaffoldManager) RunScaffold(worktreePath, branch, repoName, siteName, preset string, cfg *config.Config, dryRun, verbose, quiet bool) error {
 	path := filepath.Base(worktreePath)
 	repoPath := filepath.Base(filepath.Dir(worktreePath))
 	ctx := types.ScaffoldContext{
@@ -180,6 +180,7 @@ func (m *ScaffoldManager) RunScaffold(worktreePath, branch, repoName, siteName, 
 	opts := types.StepOptions{
 		DryRun:  dryRun,
 		Verbose: verbose,
+		Quiet:   quiet,
 	}
 
 	executor := NewStepExecutor(stepsList, &ctx, opts)
@@ -190,7 +191,7 @@ func (m *ScaffoldManager) RunScaffold(worktreePath, branch, repoName, siteName, 
 	return nil
 }
 
-func (m *ScaffoldManager) RunCleanup(worktreePath, branch, repoName, siteName, preset string, cfg *config.Config, dryRun, verbose bool) error {
+func (m *ScaffoldManager) RunCleanup(worktreePath, branch, repoName, siteName, preset string, cfg *config.Config, dryRun, verbose, quiet bool) error {
 	path := filepath.Base(worktreePath)
 	repoPath := filepath.Base(filepath.Dir(worktreePath))
 	ctx := types.ScaffoldContext{
@@ -213,6 +214,7 @@ func (m *ScaffoldManager) RunCleanup(worktreePath, branch, repoName, siteName, p
 	opts := types.StepOptions{
 		DryRun:  dryRun,
 		Verbose: verbose,
+		Quiet:   quiet,
 	}
 
 	executor := NewStepExecutor(stepsList, &ctx, opts)

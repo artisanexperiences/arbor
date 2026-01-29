@@ -33,6 +33,7 @@ available branches or entering a new branch name.`,
 		baseBranch := mustGetString(cmd, "base")
 		dryRun := mustGetBool(cmd, "dry-run")
 		verbose := mustGetBool(cmd, "verbose")
+		quiet := mustGetBool(cmd, "quiet")
 
 		var branch string
 		if len(args) > 0 {
@@ -117,7 +118,7 @@ available branches or entering a new branch name.`,
 				siteName = pc.Config.SiteName
 			}
 
-			if err := pc.ScaffoldManager().RunScaffold(absWorktreePath, branch, repoName, siteName, preset, pc.Config, false, verbose); err != nil {
+			if err := pc.ScaffoldManager().RunScaffold(absWorktreePath, branch, repoName, siteName, preset, pc.Config, false, verbose, quiet); err != nil {
 				ui.PrintErrorWithHint("Scaffold steps failed", err.Error())
 			}
 		} else {

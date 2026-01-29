@@ -30,6 +30,7 @@ This operation cannot be undone.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dryRun := mustGetBool(cmd, "dry-run")
 		verbose := mustGetBool(cmd, "verbose")
+		quiet := mustGetBool(cmd, "quiet")
 		force := mustGetBool(cmd, "force")
 
 		var projectPath string
@@ -120,7 +121,7 @@ This operation cannot be undone.`,
 				if wt.Branch == cfg.DefaultBranch && cfg.SiteName != "" {
 					siteName = cfg.SiteName
 				}
-				if err := scaffoldManager.RunCleanup(wt.Path, wt.Branch, repoName, siteName, wtPreset, cfg, false, verbose); err != nil {
+				if err := scaffoldManager.RunCleanup(wt.Path, wt.Branch, repoName, siteName, wtPreset, cfg, false, verbose, quiet); err != nil {
 					ui.PrintWarning(fmt.Sprintf("Cleanup failed for %s: %v", wt.Branch, err))
 				} else {
 					allCleanupFailed = false

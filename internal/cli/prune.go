@@ -26,6 +26,7 @@ interactive review before removal.`,
 		force := mustGetBool(cmd, "force")
 		dryRun := mustGetBool(cmd, "dry-run")
 		verbose := mustGetBool(cmd, "verbose")
+		quiet := mustGetBool(cmd, "quiet")
 
 		worktrees, err := git.ListWorktrees(pc.BarePath)
 		if err != nil {
@@ -101,7 +102,7 @@ interactive review before removal.`,
 				}
 
 				siteName := filepath.Base(wt.Path)
-				if err := pc.ScaffoldManager().RunCleanup(wt.Path, wt.Branch, "", siteName, preset, pc.Config, false, verbose); err != nil {
+				if err := pc.ScaffoldManager().RunCleanup(wt.Path, wt.Branch, "", siteName, preset, pc.Config, false, verbose, quiet); err != nil {
 					ui.PrintErrorWithHint("Cleanup failed", err.Error())
 				}
 

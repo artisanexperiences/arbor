@@ -69,6 +69,7 @@ func Execute() error {
 func init() {
 	rootCmd.PersistentFlags().Bool("dry-run", false, "Preview operations without executing")
 	rootCmd.PersistentFlags().Bool("verbose", false, "Enable verbose output")
+	rootCmd.PersistentFlags().Bool("quiet", false, "Suppress all output except errors")
 	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "Disable colored output")
 	rootCmd.PersistentFlags().Bool("no-interactive", false, "Disable interactive prompts")
 }
