@@ -66,8 +66,24 @@ jobs:
       - name: Start PostgreSQL
         run: sudo systemctl start postgresql.service
 
+      - name: Debug MySQL connection
+        run: |
+          echo "Testing MySQL connection..."
+          mysql -h 127.0.0.1 -u root -proot -e "SELECT 1 AS test"
+          mysql -h 127.0.0.1 -u root -proot -e "SHOW DATABASES"
+
+      - name: Debug PostgreSQL connection
+        run: |
+          echo "Testing PostgreSQL connection..."
+          PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -c "SELECT 1 AS test"
+          PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -c "\l"
+
       - name: Run tests
-        run: go test ./... -v -race -cover
+        run: go test ./... -v -race -cover 2>&1 | tee test-output.log || true
+
+      - name: Show test output
+        if: always()
+        run: cat test-output.log || true
 
   lint:
     name: Lint
