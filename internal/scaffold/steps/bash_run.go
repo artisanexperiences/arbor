@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os/exec"
 
+	"github.com/michaeldyrynda/arbor/internal/scaffold/template"
 	"github.com/michaeldyrynda/arbor/internal/scaffold/types"
 )
 
@@ -20,7 +21,12 @@ func (s *BashRunStep) Name() string {
 }
 
 func (s *BashRunStep) Run(ctx *types.ScaffoldContext, opts types.StepOptions) error {
-	cmd := exec.Command("bash", "-c", s.command)
+	command, err := template.ReplaceTemplateVars(s.command, ctx)
+	if err != nil {
+		return fmt.Errorf("template replacement failed: %w", err)
+	}
+
+	cmd := exec.Command("bash", "-c", command)
 	cmd.Dir = ctx.WorktreePath
 	output, err := cmd.CombinedOutput()
 	if err != nil {

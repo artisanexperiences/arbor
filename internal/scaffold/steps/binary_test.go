@@ -453,6 +453,126 @@ func TestConditionEvaluator_viaContext(t *testing.T) {
 	})
 }
 
+func TestBinaryStep_TemplateReplacement(t *testing.T) {
+	t.Run("replaces .SiteName in args", func(t *testing.T) {
+		step := Create("php.composer", config.StepConfig{
+			Args: []string{"install", "--name={{ .SiteName }}"},
+		})
+		binaryStep, ok := step.(*BinaryStep)
+		require.True(t, ok, "Expected BinaryStep type")
+
+		ctx := &types.ScaffoldContext{
+			WorktreePath: "/tmp",
+			SiteName:     "myapp",
+		}
+
+		replacedArgs := binaryStep.replaceTemplate(binaryStep.args, ctx)
+		assert.Contains(t, replacedArgs, "--name=myapp")
+	})
+
+	t.Run("replaces .RepoName in args", func(t *testing.T) {
+		step := Create("php.composer", config.StepConfig{
+			Args: []string{"install", "--repo={{ .RepoName }}"},
+		})
+		binaryStep, ok := step.(*BinaryStep)
+		require.True(t, ok, "Expected BinaryStep type")
+
+		ctx := &types.ScaffoldContext{
+			WorktreePath: "/tmp",
+			RepoName:     "myrepo",
+		}
+
+		replacedArgs := binaryStep.replaceTemplate(binaryStep.args, ctx)
+		assert.Contains(t, replacedArgs, "--repo=myrepo")
+	})
+
+	t.Run("replaces .Path in args", func(t *testing.T) {
+		step := Create("herd", config.StepConfig{
+			Args: []string{"link", "{{ .SiteName }}", "--domain={{ .Path }}.test"},
+		})
+		binaryStep, ok := step.(*BinaryStep)
+		require.True(t, ok, "Expected BinaryStep type")
+
+		ctx := &types.ScaffoldContext{
+			WorktreePath: "/tmp/myapp/feature-auth",
+			SiteName:     "myapp",
+			Path:         "feature-auth",
+		}
+
+		replacedArgs := binaryStep.replaceTemplate(binaryStep.args, ctx)
+		assert.Contains(t, replacedArgs, "--domain=feature-auth.test")
+	})
+
+	t.Run("replaces .DbSuffix in args", func(t *testing.T) {
+		step := Create("php.laravel.artisan", config.StepConfig{
+			Args: []string{"db:seed", "--database=myapp_{{ .DbSuffix }}"},
+		})
+		binaryStep, ok := step.(*BinaryStep)
+		require.True(t, ok, "Expected BinaryStep type")
+
+		ctx := &types.ScaffoldContext{
+			WorktreePath: "/tmp",
+		}
+		ctx.SetDbSuffix("swift_runner")
+
+		replacedArgs := binaryStep.replaceTemplate(binaryStep.args, ctx)
+		assert.Contains(t, replacedArgs, "--database=myapp_swift_runner")
+	})
+
+	t.Run("replaces dynamic variables from context", func(t *testing.T) {
+		step := Create("php.composer", config.StepConfig{
+			Args: []string{"install", "--name={{ .VarName }}"},
+		})
+		binaryStep, ok := step.(*BinaryStep)
+		require.True(t, ok, "Expected BinaryStep type")
+
+		ctx := &types.ScaffoldContext{
+			WorktreePath: "/tmp",
+		}
+		ctx.SetVar("VarName", "custom_value")
+
+		replacedArgs := binaryStep.replaceTemplate(binaryStep.args, ctx)
+		assert.Contains(t, replacedArgs, "--name=custom_value")
+	})
+
+	t.Run("handles whitespace variations in template syntax", func(t *testing.T) {
+		step := Create("php.composer", config.StepConfig{
+			Args: []string{"--name={{ .SiteName }}", "--repo={{.RepoName}}", "--path={{  .Path  }}"},
+		})
+		binaryStep, ok := step.(*BinaryStep)
+		require.True(t, ok, "Expected BinaryStep type")
+
+		ctx := &types.ScaffoldContext{
+			WorktreePath: "/tmp",
+			SiteName:     "myapp",
+			RepoName:     "myrepo",
+			Path:         "mypath",
+		}
+
+		replacedArgs := binaryStep.replaceTemplate(binaryStep.args, ctx)
+		assert.Contains(t, replacedArgs, "--name=myapp")
+		assert.Contains(t, replacedArgs, "--repo=myrepo")
+		assert.Contains(t, replacedArgs, "--path=mypath")
+	})
+
+	t.Run("ignores template errors for invalid syntax", func(t *testing.T) {
+		step := Create("php.composer", config.StepConfig{
+			Args: []string{"--name={{ invalid_syntax }", "--fallback=value"},
+		})
+		binaryStep, ok := step.(*BinaryStep)
+		require.True(t, ok, "Expected BinaryStep type")
+
+		ctx := &types.ScaffoldContext{
+			WorktreePath: "/tmp",
+			SiteName:     "myapp",
+		}
+
+		replacedArgs := binaryStep.replaceTemplate(binaryStep.args, ctx)
+		assert.Equal(t, "--name={{ invalid_syntax }", replacedArgs[0])
+		assert.Equal(t, "--fallback=value", replacedArgs[1])
+	})
+}
+
 func TestConditionEvaluator_fileHasScript(t *testing.T) {
 	tmpDir := t.TempDir()
 
