@@ -61,7 +61,7 @@ func TestLaravelPreset_DefaultSteps(t *testing.T) {
 	preset := NewLaravel()
 	steps := preset.DefaultSteps()
 
-	assert.Len(t, steps, 10)
+	assert.Len(t, steps, 11)
 
 	assert.Equal(t, "php.composer", steps[0].Name)
 	assert.Equal(t, []string{"install"}, steps[0].Args)
@@ -75,20 +75,27 @@ func TestLaravelPreset_DefaultSteps(t *testing.T) {
 	assert.Equal(t, ".env.example", steps[2].From)
 	assert.Equal(t, ".env", steps[2].To)
 
-	assert.Equal(t, "db.create", steps[3].Name)
+	assert.Equal(t, "php.laravel.artisan", steps[3].Name)
+	assert.Equal(t, []string{"key:generate", "--no-interaction"}, steps[3].Args)
 
-	assert.Equal(t, "node.npm", steps[4].Name)
-	assert.Equal(t, []string{"ci"}, steps[4].Args)
-	assert.NotNil(t, steps[4].Condition, "npm ci should have a condition")
-	assert.Equal(t, "package-lock.json", steps[4].Condition["file_exists"])
+	assert.Equal(t, "db.create", steps[4].Name)
 
-	assert.Equal(t, "php.laravel.artisan", steps[5].Name)
-	assert.Equal(t, []string{"key:generate", "--no-interaction"}, steps[5].Args)
+	assert.Equal(t, "env.write", steps[5].Name)
+	assert.Equal(t, "DB_DATABASE", steps[5].Key)
+	assert.Equal(t, "{{ .SiteName }}_{{ .DbSuffix }}", steps[5].Value)
 
-	assert.Equal(t, "node.npm", steps[7].Name)
-	assert.Equal(t, []string{"run", "build"}, steps[7].Args)
-	assert.NotNil(t, steps[7].Condition, "npm run build should have a condition")
-	assert.Equal(t, "package-lock.json", steps[7].Condition["file_exists"])
+	assert.Equal(t, "node.npm", steps[6].Name)
+	assert.Equal(t, []string{"ci"}, steps[6].Args)
+	assert.NotNil(t, steps[6].Condition, "npm ci should have a condition")
+	assert.Equal(t, "package-lock.json", steps[6].Condition["file_exists"])
+
+	assert.Equal(t, "php.laravel.artisan", steps[7].Name)
+	assert.Equal(t, []string{"migrate:fresh", "--seed", "--no-interaction"}, steps[7].Args)
+
+	assert.Equal(t, "node.npm", steps[8].Name)
+	assert.Equal(t, []string{"run", "build"}, steps[8].Args)
+	assert.NotNil(t, steps[8].Condition, "npm run build should have a condition")
+	assert.Equal(t, "package-lock.json", steps[8].Condition["file_exists"])
 }
 
 func TestLaravelPreset_CleanupSteps(t *testing.T) {
