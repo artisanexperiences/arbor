@@ -58,7 +58,7 @@ func TestDbCreateStep(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envFile := filepath.Join(tmpDir, ".env")
-		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\n"), 0644); err != nil {
+		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\nDB_HOST=127.0.0.1\nDB_USERNAME=root\nDB_PASSWORD=root\n"), 0644); err != nil {
 			t.Fatalf("writing env file: %v", err)
 		}
 
@@ -81,7 +81,7 @@ func TestDbCreateStep(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envFile := filepath.Join(tmpDir, ".env")
-		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=pgsql\n"), 0644); err != nil {
+		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=pgsql\nDB_HOST=127.0.0.1\nDB_USERNAME=root\nDB_PASSWORD=root\n"), 0644); err != nil {
 			t.Fatalf("writing env file: %v", err)
 		}
 
@@ -104,7 +104,7 @@ func TestDbCreateStep(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envFile := filepath.Join(tmpDir, ".env")
-		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\n"), 0644); err != nil {
+		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\nDB_HOST=127.0.0.1\nDB_USERNAME=root\nDB_PASSWORD=root\n"), 0644); err != nil {
 			t.Fatalf("writing env file: %v", err)
 		}
 
@@ -127,7 +127,7 @@ func TestDbCreateStep(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envFile := filepath.Join(tmpDir, ".env")
-		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\n"), 0644); err != nil {
+		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\nDB_HOST=127.0.0.1\nDB_USERNAME=root\nDB_PASSWORD=root\n"), 0644); err != nil {
 			t.Fatalf("writing env file: %v", err)
 		}
 
@@ -155,7 +155,7 @@ func TestDbCreateStep(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envFile := filepath.Join(tmpDir, ".env")
-		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\n"), 0644); err != nil {
+		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\nDB_HOST=127.0.0.1\nDB_USERNAME=root\nDB_PASSWORD=root\n"), 0644); err != nil {
 			t.Fatalf("writing env file: %v", err)
 		}
 
@@ -184,7 +184,7 @@ func TestDbCreateStep(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envFile := filepath.Join(tmpDir, ".env")
-		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\nAPP_NAME=myapp\n"), 0644); err != nil {
+		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\nDB_HOST=127.0.0.1\nDB_USERNAME=root\nDB_PASSWORD=root\nAPP_NAME=myapp\n"), 0644); err != nil {
 			t.Fatalf("writing env file: %v", err)
 		}
 
@@ -207,7 +207,7 @@ func TestDbCreateStep(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envFile := filepath.Join(tmpDir, ".env")
-		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\n"), 0644); err != nil {
+		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\nDB_HOST=127.0.0.1\nDB_USERNAME=root\nDB_PASSWORD=root\n"), 0644); err != nil {
 			t.Fatalf("writing env file: %v", err)
 		}
 
@@ -270,7 +270,7 @@ func TestDbCreateStep(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envFile := filepath.Join(tmpDir, ".env")
-		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\n"), 0644); err != nil {
+		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\nDB_HOST=127.0.0.1\nDB_USERNAME=root\nDB_PASSWORD=root\n"), 0644); err != nil {
 			t.Fatalf("writing env file: %v", err)
 		}
 
@@ -304,7 +304,7 @@ func TestDbDestroyStep(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envFile := filepath.Join(tmpDir, ".env")
-		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\n"), 0644); err != nil {
+		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\nDB_HOST=127.0.0.1\nDB_USERNAME=root\nDB_PASSWORD=root\n"), 0644); err != nil {
 			t.Fatalf("writing env file: %v", err)
 		}
 
@@ -321,7 +321,7 @@ func TestDbDestroyStep(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envFile := filepath.Join(tmpDir, ".env")
-		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\n"), 0644); err != nil {
+		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\nDB_HOST=127.0.0.1\nDB_USERNAME=root\nDB_PASSWORD=root\n"), 0644); err != nil {
 			t.Fatalf("writing env file: %v", err)
 		}
 
@@ -347,7 +347,7 @@ func TestDbDestroyStep(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envFile := filepath.Join(tmpDir, ".env")
-		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\n"), 0644); err != nil {
+		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\nDB_HOST=127.0.0.1\nDB_USERNAME=root\nDB_PASSWORD=root\n"), 0644); err != nil {
 			t.Fatalf("writing env file: %v", err)
 		}
 
@@ -368,7 +368,7 @@ func TestDbDestroyStep(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envFile := filepath.Join(tmpDir, ".env")
-		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=pgsql\n"), 0644); err != nil {
+		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=pgsql\nDB_HOST=127.0.0.1\nDB_USERNAME=root\nDB_PASSWORD=root\n"), 0644); err != nil {
 			t.Fatalf("writing env file: %v", err)
 		}
 
@@ -389,7 +389,7 @@ func TestDbDestroyStep(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envFile := filepath.Join(tmpDir, ".env")
-		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\n"), 0644); err != nil {
+		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\nDB_HOST=127.0.0.1\nDB_USERNAME=root\nDB_PASSWORD=root\n"), 0644); err != nil {
 			t.Fatalf("writing env file: %v", err)
 		}
 
@@ -414,7 +414,7 @@ func TestDbDestroyStep(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envFile := filepath.Join(tmpDir, ".env")
-		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\n"), 0644); err != nil {
+		if err := os.WriteFile(envFile, []byte("DB_CONNECTION=mysql\nDB_HOST=127.0.0.1\nDB_USERNAME=root\nDB_PASSWORD=root\n"), 0644); err != nil {
 			t.Fatalf("writing env file: %v", err)
 		}
 

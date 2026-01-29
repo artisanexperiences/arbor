@@ -20,6 +20,9 @@ func TestIntegration_TemplateReplacementChain(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envContent := `DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_USERNAME=root
+DB_PASSWORD=root
 APP_NAME=original_app
 `
 		envFile := filepath.Join(tmpDir, ".env")
@@ -57,7 +60,9 @@ func TestIntegration_DatabaseCreationWithEnv(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envContent := `DB_CONNECTION=mysql
-DB_HOST=localhost
+DB_HOST=127.0.0.1
+DB_USERNAME=root
+DB_PASSWORD=root
 APP_NAME=myapp
 `
 		envFile := filepath.Join(tmpDir, ".env")
@@ -127,6 +132,9 @@ func TestIntegration_DatabaseCreateEnvWriteMigrate(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envContent := `DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_USERNAME=root
+DB_PASSWORD=root
 APP_NAME=myapp
 `
 		envFile := filepath.Join(tmpDir, ".env")
@@ -163,6 +171,9 @@ func TestIntegration_DatabaseDestroyCleanup(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envContent := `DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_USERNAME=root
+DB_PASSWORD=root
 APP_NAME=myapp
 `
 		envFile := filepath.Join(tmpDir, ".env")
@@ -206,6 +217,9 @@ func TestIntegration_FullLifecycle(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envContent := `DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_USERNAME=root
+DB_PASSWORD=root
 APP_NAME=myapp
 `
 		envFile := filepath.Join(tmpDir, ".env")

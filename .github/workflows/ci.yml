@@ -66,28 +66,6 @@ jobs:
       - name: Start PostgreSQL
         run: sudo systemctl start postgresql.service
 
-      - name: Wait for MySQL
-        run: |
-          for i in {1..30}; do
-            if mysql -h 127.0.0.1 -u root -proot -e "SELECT 1" &> /dev/null; then
-              echo "MySQL is ready"
-              break
-            fi
-            echo "Waiting for MySQL... ($i/30)"
-            sleep 2
-          done
-
-      - name: Wait for PostgreSQL
-        run: |
-          for i in {1..30}; do
-            if PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -c "SELECT 1" &> /dev/null; then
-              echo "PostgreSQL is ready"
-              break
-            fi
-            echo "Waiting for PostgreSQL... ($i/30)"
-            sleep 2
-          done
-
       - name: Run tests
         run: go test ./... -v -race -cover
 
