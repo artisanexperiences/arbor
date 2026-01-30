@@ -15,14 +15,16 @@ type BinaryStep struct {
 	binary    string
 	args      []string
 	condition map[string]interface{}
+	storeAs   string
 }
 
-func NewBinaryStep(name, binary string, args []string) *BinaryStep {
+func NewBinaryStep(name, binary string, args []string, storeAs string) *BinaryStep {
 	return &BinaryStep{
 		name:      name,
 		binary:    binary,
 		args:      args,
 		condition: nil,
+		storeAs:   storeAs,
 	}
 }
 
@@ -32,6 +34,7 @@ func NewBinaryStepWithCondition(name string, cfg config.StepConfig, binary strin
 		binary:    binary,
 		args:      cfg.Args,
 		condition: cfg.Condition,
+		storeAs:   cfg.StoreAs,
 	}
 }
 
@@ -74,6 +77,14 @@ func (s *BinaryStep) Run(ctx *types.ScaffoldContext, opts types.StepOptions) err
 	if err != nil {
 		return fmt.Errorf("%s failed: %w\n%s", s.name, err, string(output))
 	}
+
+	if s.storeAs != "" {
+		ctx.SetVar(s.storeAs, strings.TrimSpace(string(output)))
+		if opts.Verbose {
+			fmt.Printf("  Stored output as %s\n", s.storeAs)
+		}
+	}
+
 	return nil
 }
 

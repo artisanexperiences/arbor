@@ -49,10 +49,10 @@ func init() {
 		return NewFileCopyStep(cfg.From, cfg.To)
 	})
 	Register("bash.run", func(cfg config.StepConfig) types.ScaffoldStep {
-		return NewBashRunStep(cfg.Command)
+		return NewBashRunStep(cfg.Command, cfg.StoreAs)
 	})
 	Register("command.run", func(cfg config.StepConfig) types.ScaffoldStep {
-		return NewCommandRunStep(cfg.Command)
+		return NewCommandRunStep(cfg.Command, cfg.StoreAs)
 	})
 	Register("env.read", func(cfg config.StepConfig) types.ScaffoldStep {
 		return NewEnvReadStep(cfg)

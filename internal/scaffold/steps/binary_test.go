@@ -597,3 +597,77 @@ func TestConditionEvaluator_fileHasScript(t *testing.T) {
 		assert.False(t, result)
 	})
 }
+
+func TestBinaryStep_OutputCapture(t *testing.T) {
+	t.Run("stores output in context when store_as is set", func(t *testing.T) {
+		step := NewBinaryStep("test.echo", "echo", []string{"hello world"}, "Greeting")
+		ctx := &types.ScaffoldContext{WorktreePath: t.TempDir()}
+
+		err := step.Run(ctx, types.StepOptions{})
+
+		assert.NoError(t, err)
+		assert.Equal(t, "hello world", ctx.GetVar("Greeting"))
+	})
+
+	t.Run("trims whitespace from captured output", func(t *testing.T) {
+		step := NewBinaryStep("test.echo", "echo", []string{"  spaced  "}, "Spaced")
+		ctx := &types.ScaffoldContext{WorktreePath: t.TempDir()}
+
+		err := step.Run(ctx, types.StepOptions{})
+
+		assert.NoError(t, err)
+		assert.Equal(t, "spaced", ctx.GetVar("Spaced"))
+	})
+
+	t.Run("does not store output when store_as is empty", func(t *testing.T) {
+		step := NewBinaryStep("test.echo", "echo", []string{"hello"}, "")
+		ctx := &types.ScaffoldContext{WorktreePath: t.TempDir()}
+
+		err := step.Run(ctx, types.StepOptions{})
+
+		assert.NoError(t, err)
+		assert.Equal(t, "", ctx.GetVar("AnyVar"))
+	})
+
+	t.Run("does not store output on command failure", func(t *testing.T) {
+		step := NewBinaryStep("test.false", "false", []string{}, "ErrorMsg")
+		ctx := &types.ScaffoldContext{WorktreePath: t.TempDir()}
+
+		err := step.Run(ctx, types.StepOptions{})
+
+		assert.Error(t, err)
+		assert.Equal(t, "", ctx.GetVar("ErrorMsg"))
+	})
+
+	t.Run("captures multiline output", func(t *testing.T) {
+		step := NewBinaryStep("test.printf", "printf", []string{"line1\\nline2\\nline3"}, "Lines")
+		ctx := &types.ScaffoldContext{WorktreePath: t.TempDir()}
+
+		err := step.Run(ctx, types.StepOptions{})
+
+		assert.NoError(t, err)
+		assert.Equal(t, "line1\nline2\nline3", ctx.GetVar("Lines"))
+	})
+
+	t.Run("overwrites existing variable", func(t *testing.T) {
+		step := NewBinaryStep("test.echo", "echo", []string{"new value"}, "MyVar")
+		ctx := &types.ScaffoldContext{WorktreePath: t.TempDir()}
+		ctx.SetVar("MyVar", "old value")
+
+		err := step.Run(ctx, types.StepOptions{})
+
+		assert.NoError(t, err)
+		assert.Equal(t, "new value", ctx.GetVar("MyVar"))
+	})
+
+	t.Run("creates step via Create with store_as", func(t *testing.T) {
+		step := Create("php", config.StepConfig{
+			Args:    []string{"-r", "echo 'hello';"},
+			StoreAs: "PhpOutput",
+		})
+
+		binaryStep, ok := step.(*BinaryStep)
+		require.True(t, ok, "Expected BinaryStep type")
+		assert.Equal(t, "PhpOutput", binaryStep.storeAs)
+	})
+}

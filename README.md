@@ -154,7 +154,7 @@ All steps support template variables that are replaced at runtime:
 | `{{ .SiteName }}` | Site/project name | `myapp` |
 | `{{ .Branch }}` | Git branch name | `feature-auth` |
 | `{{ .DbSuffix }}` | Database suffix (from db.create) | `swift_runner` |
-| `{{ .VarName }}` | Custom variable from env.read | Custom values |
+| `{{ .VarName }}` | Custom variable from env.read or captured output | Custom values |
 
 ### Built-in Steps
 
@@ -279,6 +279,18 @@ Result: Creates `app_cool_engine`, `quotes_cool_engine`, `knowledge_cool_engine`
   priority: 20
 ```
 
+Capture command output:
+
+```yaml
+- name: php.laravel.artisan
+  args: ["--version"]
+  store_as: LaravelVersion
+
+- name: env.write
+  key: APP_FRAMEWORK_VERSION
+  value: "{{ .LaravelVersion }}"
+```
+
 **`herd.link`** - Laravel Herd link
 
 ```yaml
@@ -292,6 +304,18 @@ Result: Creates `app_cool_engine`, `quotes_cool_engine`, `knowledge_cool_engine`
 ```yaml
 - name: bash.run
   command: echo "Setting up {{ .Path }}"
+```
+
+Capture output for use in later steps:
+
+```yaml
+- name: bash.run
+  command: "git rev-parse --short HEAD"
+  store_as: GitCommit
+
+- name: env.write
+  key: BUILD_COMMIT
+  value: "{{ .GitCommit }}"
 ```
 
 **`file.copy`** - Copy files with template replacement
@@ -310,6 +334,18 @@ Result: Creates `app_cool_engine`, `quotes_cool_engine`, `knowledge_cool_engine`
   args: ["run", "build"]
 ```
 
+Capture output for use in later steps:
+
+```yaml
+- name: command.run
+  command: "date +%Y-%m-%d"
+  store_as: BuildDate
+
+- name: env.write
+  key: BUILD_DATE
+  value: "{{ .BuildDate }}"
+```
+
 ### Step Options
 
 All steps support these configuration options:
@@ -320,6 +356,7 @@ All steps support these configuration options:
 | `priority` | integer | Execution order (lower runs first, default: 0) |
 | `condition` | object | Conditional execution rules |
 | `args` | array | Arguments passed to the step (e.g., `["--prefix", "app"]`) |
+| `store_as` | string | Store command output as template variable (trimmed, on success only) |
 
 ### Conditions
 
