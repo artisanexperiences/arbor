@@ -3,6 +3,7 @@ package steps
 import (
 	"fmt"
 	"os/exec"
+	"strings"
 
 	"github.com/michaeldyrynda/arbor/internal/scaffold/template"
 	"github.com/michaeldyrynda/arbor/internal/scaffold/types"
@@ -10,10 +11,11 @@ import (
 
 type BashRunStep struct {
 	command string
+	storeAs string
 }
 
-func NewBashRunStep(command string) *BashRunStep {
-	return &BashRunStep{command: command}
+func NewBashRunStep(command string, storeAs string) *BashRunStep {
+	return &BashRunStep{command: command, storeAs: storeAs}
 }
 
 func (s *BashRunStep) Name() string {
@@ -32,6 +34,14 @@ func (s *BashRunStep) Run(ctx *types.ScaffoldContext, opts types.StepOptions) er
 	if err != nil {
 		return fmt.Errorf("bash.run failed: %w\n%s", err, string(output))
 	}
+
+	if s.storeAs != "" {
+		ctx.SetVar(s.storeAs, strings.TrimSpace(string(output)))
+		if opts.Verbose {
+			fmt.Printf("  Stored output as %s\n", s.storeAs)
+		}
+	}
+
 	return nil
 }
 
