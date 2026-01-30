@@ -204,6 +204,41 @@ When refactoring, enforce these standards:
 5. **Dependency injection** - Prefer passing dependencies over global state
 6. **Testability** - Write code that can be unit tested
 
+## Release Management
+
+When preparing a new release, follow the release skill:
+
+**Trigger:** `/release`
+
+**Skill Location:** `.ai/skills/release.md`
+
+**What it does:**
+1. Analyzes commits to recommend version bump (MAJOR/MINOR/PATCH)
+2. Runs all tests and quality checks
+3. Updates CHANGELOG.md with proper formatting
+4. Updates README.md to reflect current features
+5. Creates commit and tag
+6. Monitors CI/CD and verifies release
+
+**Requirements:**
+- All changes committed
+- Working directory clean
+- `gh` CLI tool installed
+- Tests must pass
+
+**Version Format:** Always use `v` prefix (e.g., `v0.4.1`)
+
+**Process:**
+1. User triggers `/release`
+2. Skill analyzes repository and presents version options
+3. User selects version
+4. Skill runs quality gates (tests, build, vet)
+5. Skill updates documentation (CHANGELOG, README)
+6. Skill creates draft or final release based on user choice
+7. Skill commits, tags, and pushes
+8. Skill monitors CI/CD and verifies release success
+
 ## Notes
 
 - The user will review changes file-by-file before committing, **always** wait for confirmation before committing code
+- For releases, the skill handles the process automatically once approved
