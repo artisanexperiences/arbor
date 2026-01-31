@@ -55,17 +55,25 @@ func (m *ScaffoldManager) GetStepsForWorktree(cfg *config.Config, worktreePath, 
 
 	if preset, ok := m.GetPreset(presetName); ok {
 		for _, stepConfig := range preset.DefaultSteps() {
-			step := steps.Create(stepConfig.Name, stepConfig)
-			if step != nil {
-				stepsList = append(stepsList, step)
+			step, err := steps.Create(stepConfig.Name, stepConfig)
+			if err != nil {
+				return nil, fmt.Errorf("creating step %q: %w", stepConfig.Name, err)
 			}
+			stepsList = append(stepsList, step)
 		}
 	}
 
 	if cfg.Scaffold.Override {
-		stepsList = m.stepsFromConfig(cfg.Scaffold.Steps)
+		overrideSteps, err := m.stepsFromConfig(cfg.Scaffold.Steps)
+		if err != nil {
+			return nil, err
+		}
+		stepsList = overrideSteps
 	} else {
-		additionalSteps := m.stepsFromConfig(cfg.Scaffold.Steps)
+		additionalSteps, err := m.stepsFromConfig(cfg.Scaffold.Steps)
+		if err != nil {
+			return nil, err
+		}
 		stepsList = append(stepsList, additionalSteps...)
 	}
 
@@ -96,10 +104,11 @@ func (m *ScaffoldManager) GetCleanupSteps(cfg *config.Config, worktreePath, bran
 					}
 				}
 			}
-			step := steps.Create(cleanupConfig.Name, stepConfig)
-			if step != nil {
-				stepsList = append(stepsList, step)
+			step, err := steps.Create(cleanupConfig.Name, stepConfig)
+			if err != nil {
+				return nil, fmt.Errorf("creating cleanup step %q: %w", cleanupConfig.Name, err)
 			}
+			stepsList = append(stepsList, step)
 		}
 	}
 
@@ -118,26 +127,28 @@ func (m *ScaffoldManager) GetCleanupSteps(cfg *config.Config, worktreePath, bran
 				}
 			}
 		}
-		step := steps.Create(cleanupConfig.Name, stepConfig)
-		if step != nil {
-			stepsList = append(stepsList, step)
+		step, err := steps.Create(cleanupConfig.Name, stepConfig)
+		if err != nil {
+			return nil, fmt.Errorf("creating cleanup step %q: %w", cleanupConfig.Name, err)
 		}
+		stepsList = append(stepsList, step)
 	}
 
 	return stepsList, nil
 }
 
-func (m *ScaffoldManager) stepsFromConfig(stepConfigs []config.StepConfig) []types.ScaffoldStep {
+func (m *ScaffoldManager) stepsFromConfig(stepConfigs []config.StepConfig) ([]types.ScaffoldStep, error) {
 	stepsList := make([]types.ScaffoldStep, 0, len(stepConfigs))
 
 	for _, cfg := range stepConfigs {
-		step := steps.Create(cfg.Name, cfg)
-		if step != nil {
-			stepsList = append(stepsList, step)
+		step, err := steps.Create(cfg.Name, cfg)
+		if err != nil {
+			return nil, fmt.Errorf("creating step %q: %w", cfg.Name, err)
 		}
+		stepsList = append(stepsList, step)
 	}
 
-	return stepsList
+	return stepsList, nil
 }
 
 func (m *ScaffoldManager) RunScaffold(worktreePath, branch, repoName, siteName, preset string, cfg *config.Config, dryRun, verbose, quiet bool) error {

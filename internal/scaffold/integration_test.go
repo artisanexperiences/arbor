@@ -33,14 +33,14 @@ APP_NAME=original_app
 			Branch:       "test",
 		}
 
-		readStep := steps.Create("env.read", config.StepConfig{Key: "APP_NAME", StoreAs: "OriginalApp"})
-		require.NotNil(t, readStep)
-		err := readStep.Run(ctx, types.StepOptions{Verbose: false})
+		readStep, err := steps.Create("env.read", config.StepConfig{Key: "APP_NAME", StoreAs: "OriginalApp"})
+		require.NoError(t, err)
+		err = readStep.Run(ctx, types.StepOptions{Verbose: false})
 		require.NoError(t, err)
 		assert.Equal(t, "original_app", ctx.GetVar("OriginalApp"))
 
-		writeStep := steps.Create("env.write", config.StepConfig{Key: "NEW_APP", Value: "{{ .SiteName }}"})
-		require.NotNil(t, writeStep)
+		writeStep, err := steps.Create("env.write", config.StepConfig{Key: "NEW_APP", Value: "{{ .SiteName }}"})
+		require.NoError(t, err)
 		err = writeStep.Run(ctx, types.StepOptions{Verbose: false})
 		require.NoError(t, err)
 
@@ -102,13 +102,13 @@ func TestIntegration_EnvReadWriteFlow(t *testing.T) {
 			Path:         "feature-auth",
 		}
 
-		readStep := steps.Create("env.read", config.StepConfig{Key: "APP_NAME", StoreAs: "OriginalName"})
-		require.NotNil(t, readStep)
-		err := readStep.Run(ctx, types.StepOptions{Verbose: false})
+		readStep, err := steps.Create("env.read", config.StepConfig{Key: "APP_NAME", StoreAs: "OriginalName"})
+		require.NoError(t, err)
+		err = readStep.Run(ctx, types.StepOptions{Verbose: false})
 		require.NoError(t, err)
 
-		writeStep := steps.Create("env.write", config.StepConfig{Key: "NEW_NAME", Value: "{{ .SiteName }}_{{ .Path }}"})
-		require.NotNil(t, writeStep)
+		writeStep, err := steps.Create("env.write", config.StepConfig{Key: "NEW_NAME", Value: "{{ .SiteName }}_{{ .Path }}"})
+		require.NoError(t, err)
 		err = writeStep.Run(ctx, types.StepOptions{Verbose: false})
 		require.NoError(t, err)
 
@@ -147,8 +147,8 @@ APP_NAME=myapp
 		suffix := ctx.GetDbSuffix()
 		assert.NotEmpty(t, suffix)
 
-		writeStep := steps.Create("env.write", config.StepConfig{Key: "DB_DATABASE", Value: "{{ .SiteName }}_{{ .DbSuffix }}"})
-		require.NotNil(t, writeStep)
+		writeStep, err := steps.Create("env.write", config.StepConfig{Key: "DB_DATABASE", Value: "{{ .SiteName }}_{{ .DbSuffix }}"})
+		require.NoError(t, err)
 		err = writeStep.Run(ctx, types.StepOptions{Verbose: false})
 		require.NoError(t, err)
 
@@ -179,8 +179,8 @@ APP_NAME=myapp
 			WorktreePath: tmpDir,
 		}
 
-		destroyStep := steps.Create("db.destroy", config.StepConfig{})
-		require.NotNil(t, destroyStep)
+		destroyStep, err := steps.Create("db.destroy", config.StepConfig{})
+		require.NoError(t, err)
 		err = destroyStep.Run(ctx, types.StepOptions{Verbose: false})
 		require.NoError(t, err)
 
@@ -191,11 +191,11 @@ APP_NAME=myapp
 
 func TestIntegration_BunIntegration(t *testing.T) {
 	t.Run("node.bun step is registered and functional", func(t *testing.T) {
-		step := steps.Create("node.bun", config.StepConfig{
+		step, err := steps.Create("node.bun", config.StepConfig{
 			Args: []string{"--version"},
 		})
 
-		assert.NotNil(t, step)
+		require.NoError(t, err)
 		assert.Equal(t, "node.bun", step.Name())
 	})
 }
@@ -229,8 +229,8 @@ APP_NAME=myapp
 		suffix := ctx.GetDbSuffix()
 		assert.NotEmpty(t, suffix)
 
-		writeDbStep := steps.Create("env.write", config.StepConfig{Key: "DB_DATABASE", Value: "{{ .SiteName }}_{{ .DbSuffix }}"})
-		require.NotNil(t, writeDbStep)
+		writeDbStep, err := steps.Create("env.write", config.StepConfig{Key: "DB_DATABASE", Value: "{{ .SiteName }}_{{ .DbSuffix }}"})
+		require.NoError(t, err)
 		err = writeDbStep.Run(ctx, types.StepOptions{Verbose: false})
 		require.NoError(t, err)
 
@@ -239,8 +239,8 @@ APP_NAME=myapp
 		expectedDbName := "myapp_" + suffix
 		assert.Contains(t, string(content), "DB_DATABASE="+expectedDbName)
 
-		writeDomainStep := steps.Create("env.write", config.StepConfig{Key: "APP_DOMAIN", Value: "app.{{ .Path }}.test"})
-		require.NotNil(t, writeDomainStep)
+		writeDomainStep, err := steps.Create("env.write", config.StepConfig{Key: "APP_DOMAIN", Value: "app.{{ .Path }}.test"})
+		require.NoError(t, err)
 		err = writeDomainStep.Run(ctx, types.StepOptions{Verbose: false})
 		require.NoError(t, err)
 
@@ -410,8 +410,8 @@ APP_NAME=some-feature
 		actualDbName := createCalls[0]
 		assert.True(t, strings.HasPrefix(actualDbName, "some_feature_"), "Database should be created with sanitized name (underscores)")
 
-		writeStep := steps.Create("env.write", config.StepConfig{Key: "DB_DATABASE", Value: "{{ .SanitizedSiteName }}_{{ .DbSuffix }}"})
-		require.NotNil(t, writeStep)
+		writeStep, err := steps.Create("env.write", config.StepConfig{Key: "DB_DATABASE", Value: "{{ .SanitizedSiteName }}_{{ .DbSuffix }}"})
+		require.NoError(t, err)
 		err = writeStep.Run(ctx, types.StepOptions{Verbose: false})
 		require.NoError(t, err)
 
