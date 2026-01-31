@@ -2,6 +2,8 @@
 # Run: golangci-lint run ./...
 # Install: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
+version: "2"
+
 run:
   timeout: 5m
   go: "1.23"
