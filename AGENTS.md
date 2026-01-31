@@ -95,10 +95,10 @@ go test ./internal/utils/... -v
 
 ### Linting
 
-Install golangci-lint (pinned to v1.62.0):
+Install golangci-lint (pinned to v2.1.2):
 
 ```bash
-go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.62.0
+go install github.com/golangci/golangci-lint/cmd/golangci-lint@v2.1.2
 ```
 
 Ensure `~/go/bin` is in your PATH:
