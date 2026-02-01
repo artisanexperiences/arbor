@@ -6,6 +6,7 @@ import (
 
 	"github.com/michaeldyrynda/arbor/internal/config"
 	"github.com/michaeldyrynda/arbor/internal/scaffold/types"
+	"github.com/michaeldyrynda/arbor/internal/scaffold/validation"
 )
 
 type StepFactory func(cfg config.StepConfig) types.ScaffoldStep
@@ -14,35 +15,55 @@ type StepFactory func(cfg config.StepConfig) types.ScaffoldStep
 // Use NewRegistry() to create an instance, or use the global functions
 // for backward compatibility during migration.
 type Registry struct {
-	factories map[string]StepFactory
-	order     []string
+	factories  map[string]StepFactory
+	validators map[string]*validation.Validator
+	order      []string
 }
 
 // NewRegistry creates a new step registry with no registered steps.
 func NewRegistry() *Registry {
 	return &Registry{
-		factories: make(map[string]StepFactory),
-		order:     make([]string, 0),
+		factories:  make(map[string]StepFactory),
+		validators: make(map[string]*validation.Validator),
+		order:      make([]string, 0),
 	}
 }
 
 // Register adds a step factory to the registry.
 // Panics if a step with the same name is already registered.
 func (r *Registry) Register(name string, factory StepFactory) {
+	r.RegisterWithValidator(name, factory, nil)
+}
+
+// RegisterWithValidator adds a step factory with an optional validator to the registry.
+// The validator will be used to validate configuration before creating the step.
+// Panics if a step with the same name is already registered.
+func (r *Registry) RegisterWithValidator(name string, factory StepFactory, validator *validation.Validator) {
 	if _, exists := r.factories[name]; exists {
 		panic(fmt.Sprintf("step %q already registered", name))
 	}
 	r.factories[name] = factory
+	if validator != nil {
+		r.validators[name] = validator
+	}
 	r.order = append(r.order, name)
 }
 
 // Create instantiates a step by name with the given configuration.
-// Validates the configuration before creating the step.
+// Validates the configuration before creating the step using registered validators.
+// Falls back to built-in validation if no validator is registered.
 // Returns an error if the step is not registered or config is invalid.
 func (r *Registry) Create(name string, cfg config.StepConfig) (types.ScaffoldStep, error) {
-	// Validate configuration before creating step (using the step name)
-	if err := config.ValidateStepConfig(name, cfg); err != nil {
-		return nil, fmt.Errorf("invalid config for step %q: %w", name, err)
+	// Use registered validator if available
+	if validator, ok := r.validators[name]; ok && validator != nil {
+		if err := validator.Validate(cfg); err != nil {
+			return nil, err
+		}
+	} else {
+		// Fall back to built-in validation
+		if err := config.ValidateStepConfig(name, cfg); err != nil {
+			return nil, fmt.Errorf("invalid config for step %q: %w", name, err)
+		}
 	}
 
 	if factory, ok := r.factories[name]; ok {
@@ -70,22 +91,28 @@ func (r *Registry) RegisterDefaults() {
 		})
 	}
 
-	// Other steps
-	r.Register("file.copy", func(cfg config.StepConfig) types.ScaffoldStep {
+	// Other steps with validators
+	r.RegisterWithValidator("file.copy", func(cfg config.StepConfig) types.ScaffoldStep {
 		return NewFileCopyStep(cfg.From, cfg.To)
-	})
-	r.Register("bash.run", func(cfg config.StepConfig) types.ScaffoldStep {
+	}, validation.NewFileCopyValidator())
+
+	r.RegisterWithValidator("bash.run", func(cfg config.StepConfig) types.ScaffoldStep {
 		return NewBashRunStep(cfg.Command, cfg.StoreAs)
-	})
-	r.Register("command.run", func(cfg config.StepConfig) types.ScaffoldStep {
+	}, validation.NewBashRunValidator())
+
+	r.RegisterWithValidator("command.run", func(cfg config.StepConfig) types.ScaffoldStep {
 		return NewCommandRunStep(cfg.Command, cfg.StoreAs)
-	})
-	r.Register("env.read", func(cfg config.StepConfig) types.ScaffoldStep {
+	}, validation.NewCommandRunValidator())
+
+	r.RegisterWithValidator("env.read", func(cfg config.StepConfig) types.ScaffoldStep {
 		return NewEnvReadStep(cfg)
-	})
-	r.Register("env.write", func(cfg config.StepConfig) types.ScaffoldStep {
+	}, validation.NewEnvReadValidator())
+
+	r.RegisterWithValidator("env.write", func(cfg config.StepConfig) types.ScaffoldStep {
 		return NewEnvWriteStep(cfg)
-	})
+	}, validation.NewEnvWriteValidator())
+
+	// Steps without custom validators (use built-in validation)
 	r.Register("db.create", func(cfg config.StepConfig) types.ScaffoldStep {
 		return NewDbCreateStep(cfg)
 	})
