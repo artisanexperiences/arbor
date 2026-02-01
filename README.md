@@ -43,6 +43,9 @@ go install github.com/michaeldyrynda/arbor/cmd/arbor@latest
 ## Quick Start
 
 ```bash
+# Check arbor version
+arbor version
+
 # Initialise a new Laravel project
 arbor init git@github.com:user/my-laravel-app.git
 
