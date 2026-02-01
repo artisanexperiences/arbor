@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/viper"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -217,24 +218,41 @@ func LoadGlobal() (*GlobalConfig, error) {
 	return &config, nil
 }
 
-// SaveProject saves project configuration to arbor.yaml
+// SaveProject saves project configuration to arbor.yaml.
+// Uses yaml.v3 directly to preserve existing config structure.
 func SaveProject(path string, config *Config) error {
-	v := viper.New()
+	configPath := filepath.Join(path, "arbor.yaml")
 
-	v.SetConfigName("arbor")
-	v.SetConfigType("yaml")
-	v.AddConfigPath(path)
-
-	if err := v.MergeConfigMap(map[string]interface{}{
-		"site_name":      config.SiteName,
-		"preset":         config.Preset,
-		"default_branch": config.DefaultBranch,
-	}); err != nil {
-		return fmt.Errorf("merging config: %w", err)
+	// Read existing config if it exists (to preserve any manual edits)
+	var existing map[string]interface{}
+	if content, err := os.ReadFile(configPath); err == nil {
+		if err := yaml.Unmarshal(content, &existing); err != nil {
+			return fmt.Errorf("parsing existing config: %w", err)
+		}
 	}
 
-	configPath := filepath.Join(path, "arbor.yaml")
-	if err := v.WriteConfigAs(configPath); err != nil {
+	if existing == nil {
+		existing = make(map[string]interface{})
+	}
+
+	// Merge new data into existing config
+	if config.SiteName != "" {
+		existing["site_name"] = config.SiteName
+	}
+	if config.Preset != "" {
+		existing["preset"] = config.Preset
+	}
+	if config.DefaultBranch != "" {
+		existing["default_branch"] = config.DefaultBranch
+	}
+
+	// Marshal and write back
+	content, err := yaml.Marshal(existing)
+	if err != nil {
+		return fmt.Errorf("marshaling config: %w", err)
+	}
+
+	if err := os.WriteFile(configPath, content, 0644); err != nil {
 		return fmt.Errorf("writing config: %w", err)
 	}
 
@@ -317,25 +335,35 @@ func ReadWorktreeConfig(worktreePath string) (*WorktreeConfig, error) {
 	return &config, nil
 }
 
-// WriteWorktreeConfig writes worktree-local configuration to arbor.yaml
+// WriteWorktreeConfig writes worktree-local configuration to arbor.yaml.
+// Uses yaml.v3 directly to preserve existing config structure.
 func WriteWorktreeConfig(worktreePath string, data map[string]string) error {
-	v := viper.New()
-	v.SetConfigName("arbor")
-	v.SetConfigType("yaml")
-	v.AddConfigPath(worktreePath)
-
-	dataMap := make(map[string]interface{})
-	for k, v := range data {
-		dataMap[k] = v
-	}
-
-	if err := v.MergeConfigMap(dataMap); err != nil {
-		return fmt.Errorf("merging worktree config: %w", err)
-	}
-
 	configPath := filepath.Join(worktreePath, "arbor.yaml")
 
-	if err := v.WriteConfigAs(configPath); err != nil {
+	// Read existing config if it exists
+	var existing map[string]interface{}
+	if content, err := os.ReadFile(configPath); err == nil {
+		if err := yaml.Unmarshal(content, &existing); err != nil {
+			return fmt.Errorf("parsing existing worktree config: %w", err)
+		}
+	}
+
+	if existing == nil {
+		existing = make(map[string]interface{})
+	}
+
+	// Merge new data into existing config
+	for k, v := range data {
+		existing[k] = v
+	}
+
+	// Marshal and write back
+	content, err := yaml.Marshal(existing)
+	if err != nil {
+		return fmt.Errorf("marshaling worktree config: %w", err)
+	}
+
+	if err := os.WriteFile(configPath, content, 0644); err != nil {
 		return fmt.Errorf("writing worktree config: %w", err)
 	}
 
