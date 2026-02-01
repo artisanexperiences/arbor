@@ -21,6 +21,9 @@ Before running this skill:
 Verify repository is ready for release:
 
 ```bash
+# Fetch latest tags from remote to ensure we have all version information
+git fetch --tags
+
 # Check for uncommitted changes
 if [[ -n $(git status --porcelain) ]]; then
     echo "Error: Working directory has uncommitted changes"
@@ -41,12 +44,44 @@ fi
 Analyze changes and recommend version bump:
 
 ```bash
-# Get current version
-CURRENT_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-echo "Current version: $CURRENT_VERSION"
+# Fetch latest tags from remote to ensure we have all version information
+git fetch --tags
+
+# Get the latest tag by creation date (most recent release)
+CURRENT_VERSION=$(git tag -l --sort=-creatordate | head -1)
+if [[ -z "$CURRENT_VERSION" ]]; then
+    CURRENT_VERSION="v0.0.0"
+fi
+echo "Latest tag: $CURRENT_VERSION"
+
+# Check if this tag is an ancestor of HEAD
+if git merge-base --is-ancestor $CURRENT_VERSION HEAD 2>/dev/null; then
+    echo "  $CURRENT_VERSION is an ancestor of current HEAD"
+else
+    echo "  Warning: $CURRENT_VERSION is NOT an ancestor of current HEAD"
+    echo "  This may indicate the tag was created on a different branch"
+fi
+
+# Show recent tags for context
+echo ""
+echo "Recent tags:"
+git tag -l --sort=-creatordate | head -5 | while read tag; do
+    if git merge-base --is-ancestor $tag HEAD 2>/dev/null; then
+        echo "  $tag (on current branch)"
+    else
+        echo "  $tag (not on current branch)"
+    fi
+done
 
 # Get commits since last tag
-COMMITS=$(git log ${CURRENT_VERSION}..HEAD --oneline)
+# Handle both cases: tag is ancestor or not
+if git merge-base --is-ancestor $CURRENT_VERSION HEAD 2>/dev/null; then
+    # Tag is ancestor, get commits after it
+    COMMITS=$(git log ${CURRENT_VERSION}..HEAD --oneline)
+else
+    # Tag is not ancestor, get all commits on current branch
+    COMMITS=$(git log --oneline)
+fi
 
 # Categorize commits
 BREAKING=$(echo "$COMMITS" | grep -i "break\|breaking" || true)
