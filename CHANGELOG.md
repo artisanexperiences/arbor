@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-02-01
+
+### Added
+- Gradient block letter header with tree-themed styling for CLI commands
+- New scaffold step `env.copy` for copying environment variables between worktrees
+- Step validation framework with `Validate()` interface for all scaffold steps
+- File system interface abstraction for testable I/O operations
+- Per-step configuration validation for early error detection
+
+### Changed
+- Renamed `php.laravel.artisan` to `php.laravel` for consistency
+- Replaced Viper config library with yaml.v3 for cleaner config writes
+- Migrated to embedded `BaseStepConfig` for all step configurations
+
+### Refactored
+- Implemented explicit step registry with ordered slice for deterministic iteration
+- Introduced Command Executor interface for testable command execution
+
 ## [0.4.2] - 2026-02-01
 
 ### Added
@@ -136,6 +154,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Interactive commands (work, prune)
 - Multi-platform builds and CI/CD
 
+[0.5.0]: https://github.com/michaeldyrynda/arbor/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/michaeldyrynda/arbor/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/michaeldyrynda/arbor/compare/v0.4.0...v0.4.1
 [0.3.1]: https://github.com/michaeldyrynda/arbor/compare/v0.3.0...v0.3.1
