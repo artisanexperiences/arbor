@@ -270,7 +270,7 @@ When preparing a new release, follow the release skill:
 
 **Trigger:** `/release`
 
-**Skill Location:** `.ai/skills/release.md`
+**Skill Location:** `.opencode/skills/release/SKILL.md`
 
 **What it does:**
 1. Analyzes commits to recommend version bump (MAJOR/MINOR/PATCH)
