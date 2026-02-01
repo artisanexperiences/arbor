@@ -271,17 +271,17 @@ Result: Creates `app_cool_engine`, `quotes_cool_engine`, `knowledge_cool_engine`
   args: ["install"]
 ```
 
-**`php.laravel.artisan`** - Laravel Artisan commands
+**`php.laravel`** - Laravel Artisan commands
 
 ```yaml
-- name: php.laravel.artisan
+- name: php.laravel
   args: ["migrate:fresh", "--no-interaction"]
 ```
 
 Capture command output:
 
 ```yaml
-- name: php.laravel.artisan
+- name: php.laravel
   args: ["--version"]
   store_as: LaravelVersion
 
@@ -396,7 +396,7 @@ scaffold:
       args: ["install"]
 
     # Run migrations
-    - name: php.laravel.artisan
+    - name: php.laravel
       args: ["migrate:fresh", "--no-interaction"]
 
     # Set domain based on worktree path
@@ -405,7 +405,7 @@ scaffold:
       value: "app.{{ .Path }}.test"
 
     # Generate application key
-    - name: php.laravel.artisan
+    - name: php.laravel
       args: ["key:generate"]
 
 cleanup:

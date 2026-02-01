@@ -71,7 +71,7 @@ func TestRegistry_StepRegistration(t *testing.T) {
 		expectedSteps := []string{
 			"php",
 			"php.composer",
-			"php.laravel.artisan",
+			"php.laravel",
 			"node.npm",
 			"node.yarn",
 			"node.pnpm",

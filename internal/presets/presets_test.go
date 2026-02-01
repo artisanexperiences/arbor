@@ -75,7 +75,7 @@ func TestLaravelPreset_DefaultSteps(t *testing.T) {
 	assert.Equal(t, ".env.example", steps[2].From)
 	assert.Equal(t, ".env", steps[2].To)
 
-	assert.Equal(t, "php.laravel.artisan", steps[3].Name)
+	assert.Equal(t, "php.laravel", steps[3].Name)
 	assert.Equal(t, []string{"key:generate", "--no-interaction"}, steps[3].Args)
 
 	assert.Equal(t, "db.create", steps[4].Name)
@@ -89,7 +89,7 @@ func TestLaravelPreset_DefaultSteps(t *testing.T) {
 	assert.NotNil(t, steps[6].Condition, "npm ci should have a condition")
 	assert.Equal(t, "package-lock.json", steps[6].Condition["file_exists"])
 
-	assert.Equal(t, "php.laravel.artisan", steps[7].Name)
+	assert.Equal(t, "php.laravel", steps[7].Name)
 	assert.Equal(t, []string{"migrate:fresh", "--seed", "--no-interaction"}, steps[7].Args)
 
 	assert.Equal(t, "node.npm", steps[8].Name)

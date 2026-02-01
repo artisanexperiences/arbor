@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Capture command output from `bash.run`, `command.run`, and all binary steps
   - Store output as template variables for use in subsequent steps
   - Automatic whitespace trimming of captured output
-  - Works with: `php`, `php.composer`, `php.laravel.artisan`, `node.npm`, `node.yarn`, `node.pnpm`, `node.bun`, `herd`
+  - Works with: `php`, `php.composer`, `php.laravel`, `node.npm`, `node.yarn`, `node.pnpm`, `node.bun`, `herd`
 
 ## [0.3.1] - 2026-01-29
 

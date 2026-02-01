@@ -42,12 +42,12 @@ func TestBinaryStep_CommandConstruction(t *testing.T) {
 		assert.Equal(t, []string{"-v"}, binaryStep.args)
 	})
 
-	t.Run("php.laravel.artisan uses BinaryStep with 'php artisan' binary", func(t *testing.T) {
-		step, err := Create("php.laravel.artisan", config.StepConfig{
+	t.Run("php.laravel uses BinaryStep with 'php artisan' binary", func(t *testing.T) {
+		step, err := Create("php.laravel", config.StepConfig{
 			Args: []string{"key:generate", "--no-interaction"},
 		})
 		require.NoError(t, err)
-		assert.Equal(t, "php.laravel.artisan", step.Name())
+		assert.Equal(t, "php.laravel", step.Name())
 
 		binaryStep, ok := step.(*BinaryStep)
 		assert.True(t, ok, "Expected BinaryStep type")
@@ -87,8 +87,8 @@ func TestBinaryStep_CommandConstructionChecks(t *testing.T) {
 		assert.Equal(t, expectedCommand, joinArgs(allArgs))
 	})
 
-	t.Run("php.laravel.artisan command construction", func(t *testing.T) {
-		step, err := Create("php.laravel.artisan", config.StepConfig{
+	t.Run("php.laravel command construction", func(t *testing.T) {
+		step, err := Create("php.laravel", config.StepConfig{
 			Args: []string{"key:generate", "--no-interaction"},
 		})
 		require.NoError(t, err)
@@ -102,8 +102,8 @@ func TestBinaryStep_CommandConstructionChecks(t *testing.T) {
 		assert.Equal(t, expectedCommand, joinArgs(allArgs))
 	})
 
-	t.Run("php.laravel.artisan migrate:fresh command", func(t *testing.T) {
-		step, err := Create("php.laravel.artisan", config.StepConfig{
+	t.Run("php.laravel migrate:fresh command", func(t *testing.T) {
+		step, err := Create("php.laravel", config.StepConfig{
 			Args: []string{"migrate:fresh", "--seed", "--no-interaction"},
 		})
 		require.NoError(t, err)
@@ -117,7 +117,7 @@ func TestBinaryStep_CommandConstructionChecks(t *testing.T) {
 	})
 
 	t.Run("binary step condition checks first part of multi-part binary", func(t *testing.T) {
-		step, err := Create("php.laravel.artisan", config.StepConfig{
+		step, err := Create("php.laravel", config.StepConfig{
 			Args: []string{"storage:link"},
 		})
 		require.NoError(t, err)
@@ -485,7 +485,7 @@ func TestBinaryStep_TemplateReplacement(t *testing.T) {
 	})
 
 	t.Run("replaces .DbSuffix in args", func(t *testing.T) {
-		step, err := Create("php.laravel.artisan", config.StepConfig{
+		step, err := Create("php.laravel", config.StepConfig{
 			Args: []string{"db:seed", "--database=myapp_{{ .DbSuffix }}"},
 		})
 		require.NoError(t, err)
