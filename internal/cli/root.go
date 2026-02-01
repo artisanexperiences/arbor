@@ -26,16 +26,86 @@ It is cross-project, cross-language, and cross-environment compatible.`,
 
 var noColor bool
 
-const banner = `
-   _____         __
-  /  _  \  _____\_ |__   ___________
- /  /_\  \ \__  \| __ \ /  _ \_  __ \
-/    |    \ / __ \| \_\ (  <_> )  | \/
-\____|__  /(____  /___  /\____/|__|
-        \/      \/    \/
+func printBanner() {
+	// Big block letters for "ARBOR" with gradient colors
+	blockLetters := [][]string{
+		// A
+		{
+			" █████╗ ",
+			"██╔══██╗",
+			"███████║",
+			"██╔══██║",
+			"██║  ██║",
+			"╚═╝  ╚═╝",
+		},
+		// R
+		{
+			"██████╗ ",
+			"██╔══██╗",
+			"██████╔╝",
+			"██╔══██╗",
+			"██║  ██║",
+			"╚═╝  ╚═╝",
+		},
+		// B
+		{
+			"██████╗ ",
+			"██╔══██╗",
+			"██████╔╝",
+			"██╔══██╗",
+			"██████╔╝",
+			"╚═════╝ ",
+		},
+		// O
+		{
+			" ██████╗ ",
+			"██╔═══██╗",
+			"██║   ██║",
+			"██║   ██║",
+			"╚██████╔╝",
+			" ╚═════╝ ",
+		},
+		// R
+		{
+			"██████╗ ",
+			"██╔══██╗",
+			"██████╔╝",
+			"██╔══██╗",
+			"██║  ██║",
+			"╚═╝  ╚═╝",
+		},
+	}
 
-Git Worktree Manager for Agentic Development
+	// Gradient colors - 5 colors for 5 letters
+	colors := []lipgloss.Color{
+		lipgloss.Color("#A5D6A7"), // Lightest green
+		lipgloss.Color("#81C784"),
+		lipgloss.Color("#66BB6A"),
+		lipgloss.Color("#4CAF50"), // Primary green
+		lipgloss.Color("#388E3C"), // Darkest green
+	}
 
+	// Render each row of the block letters
+	for row := 0; row < 6; row++ {
+		var lineParts []string
+		for letterIdx := 0; letterIdx < len(blockLetters); letterIdx++ {
+			style := lipgloss.NewStyle().
+				Foreground(colors[letterIdx]).
+				Bold(true)
+			lineParts = append(lineParts, style.Render(blockLetters[letterIdx][row]))
+		}
+		fmt.Println(lipgloss.JoinHorizontal(lipgloss.Left, lineParts...))
+	}
+
+	subtitleStyle := lipgloss.NewStyle().
+		Foreground(ui.ColorMuted).
+		MarginTop(1).
+		MarginBottom(1)
+
+	commandsStyle := lipgloss.NewStyle().
+		Foreground(ui.Text)
+
+	commands := `
 Commands:
   init      Initialize a new repository
   work      Create or checkout a worktree
@@ -48,11 +118,8 @@ Commands:
 
 Run 'arbor <command> --help' for more information.`
 
-func printBanner() {
-	style := lipgloss.NewStyle().
-		Foreground(ui.Primary).
-		Bold(true)
-	fmt.Println(style.Render(banner))
+	fmt.Println(subtitleStyle.Render("Git Worktree Manager for Agentic Development"))
+	fmt.Println(commandsStyle.Render(commands))
 }
 
 func Execute() error {
