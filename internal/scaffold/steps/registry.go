@@ -37,8 +37,14 @@ func (r *Registry) Register(name string, factory StepFactory) {
 }
 
 // Create instantiates a step by name with the given configuration.
-// Returns an error if the step is not registered.
+// Validates the configuration before creating the step.
+// Returns an error if the step is not registered or config is invalid.
 func (r *Registry) Create(name string, cfg config.StepConfig) (types.ScaffoldStep, error) {
+	// Validate configuration before creating step (using the step name)
+	if err := config.ValidateStepConfig(name, cfg); err != nil {
+		return nil, fmt.Errorf("invalid config for step %q: %w", name, err)
+	}
+
 	if factory, ok := r.factories[name]; ok {
 		return factory(cfg), nil
 	}

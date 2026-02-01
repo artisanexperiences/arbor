@@ -68,7 +68,8 @@ func TestRegistry_StepRegistration(t *testing.T) {
 	})
 
 	t.Run("all expected steps are registered", func(t *testing.T) {
-		expectedSteps := []string{
+		// Test binary steps with minimal config
+		binarySteps := []string{
 			"php",
 			"php.composer",
 			"php.laravel",
@@ -77,19 +78,32 @@ func TestRegistry_StepRegistration(t *testing.T) {
 			"node.pnpm",
 			"node.bun",
 			"herd",
-			"file.copy",
-			"bash.run",
-			"command.run",
-			"env.read",
-			"env.write",
-			"db.create",
-			"db.destroy",
 		}
 
-		for _, stepName := range expectedSteps {
+		for _, stepName := range binarySteps {
 			step, err := Create(stepName, config.StepConfig{})
-			require.NoError(t, err, "Step '%s' should be registered", stepName)
+			require.NoError(t, err, "Binary step '%s' should be registered", stepName)
 			assert.Equal(t, stepName, step.Name())
+		}
+
+		// Test steps with required fields
+		testCases := []struct {
+			stepName string
+			cfg      config.StepConfig
+		}{
+			{"file.copy", config.StepConfig{From: "a.txt", To: "b.txt"}},
+			{"bash.run", config.StepConfig{Command: "echo test"}},
+			{"command.run", config.StepConfig{Command: "echo test"}},
+			{"env.read", config.StepConfig{Key: "TEST_KEY"}},
+			{"env.write", config.StepConfig{Key: "TEST_KEY"}},
+			{"db.create", config.StepConfig{}},
+			{"db.destroy", config.StepConfig{}},
+		}
+
+		for _, tc := range testCases {
+			step, err := Create(tc.stepName, tc.cfg)
+			require.NoError(t, err, "Step '%s' should be registered", tc.stepName)
+			assert.Equal(t, tc.stepName, step.Name())
 		}
 	})
 }
