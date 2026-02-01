@@ -301,4 +301,8 @@ When preparing a new release, follow the release skill:
 ## Notes
 
 - The user will review changes file-by-file before committing, **always** wait for confirmation before committing code
+- **Never** force commit (`git add -f`) a file that is in the `.gitignore` file unless explicitly instructed to do so
+  - Files in `.gitignore` are excluded from version control for a reason
+  - Even if a plan document or other file needs to be updated, respect the gitignore rules
+  - Wait for explicit user instruction before overriding gitignore
 - For releases, the skill handles the process automatically once approved
