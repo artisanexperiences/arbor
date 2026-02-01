@@ -12,12 +12,11 @@ linters:
   enable:
     # Default linters
     - errcheck
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
     - unused
-    
+
     # Additional recommended linters
     - unconvert
     - whitespace
@@ -26,7 +25,7 @@ linters:
     errcheck:
       check-type-assertions: false  # Allow unchecked type assertions
       check-blank: false
-      
+
     govet:
       enable-all: true
       disable:
@@ -39,7 +38,7 @@ linters:
       - path: _test\.go
         linters:
           - errcheck
-          
+
       # Allow fmt.Println in main
       - path: cmd/arbor/main\.go
         linters:
@@ -49,11 +48,11 @@ formatters:
   enable:
     - gofmt
     - goimports
-  
+
   settings:
     gofmt:
       simplify: false
-    
+
     goimports:
       local-prefixes:
         - github.com/michaeldyrynda/arbor
