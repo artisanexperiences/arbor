@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"path/filepath"
 	"testing"
 )
 
@@ -46,22 +47,24 @@ func TestMockFS_WriteFile(t *testing.T) {
 func TestMockFS_MkdirAll(t *testing.T) {
 	m := NewMockFS()
 
-	err := m.MkdirAll("/a/b/c/d", 0755)
+	// Use filepath.Join for cross-platform compatibility
+	path := filepath.Join("a", "b", "c", "d")
+	err := m.MkdirAll(path, 0755)
 	if err != nil {
 		t.Errorf("expected no error, got: %v", err)
 	}
 
-	if !m.DirExists("/a") {
-		t.Error("expected /a to exist")
+	if !m.DirExists("a") {
+		t.Error("expected 'a' to exist")
 	}
-	if !m.DirExists("/a/b") {
-		t.Error("expected /a/b to exist")
+	if !m.DirExists(filepath.Join("a", "b")) {
+		t.Error("expected 'a/b' to exist")
 	}
-	if !m.DirExists("/a/b/c") {
-		t.Error("expected /a/b/c to exist")
+	if !m.DirExists(filepath.Join("a", "b", "c")) {
+		t.Error("expected 'a/b/c' to exist")
 	}
-	if !m.DirExists("/a/b/c/d") {
-		t.Error("expected /a/b/c/d to exist")
+	if !m.DirExists(filepath.Join("a", "b", "c", "d")) {
+		t.Error("expected 'a/b/c/d' to exist")
 	}
 }
 
