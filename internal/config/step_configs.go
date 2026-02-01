@@ -10,13 +10,18 @@ type StepValidator interface {
 	Validate() error
 }
 
-// BinaryStepConfig represents configuration for binary execution steps (php, npm, etc.)
-type BinaryStepConfig struct {
+// BaseStepConfig contains fields common to all steps.
+type BaseStepConfig struct {
 	Name      string                 `mapstructure:"name"`
 	Enabled   *bool                  `mapstructure:"enabled"`
-	Args      []string               `mapstructure:"args"`
-	StoreAs   string                 `mapstructure:"store_as"`
 	Condition map[string]interface{} `mapstructure:"condition"`
+}
+
+// BinaryStepConfig represents configuration for binary execution steps (php, npm, etc.)
+type BinaryStepConfig struct {
+	BaseStepConfig
+	Args    []string `mapstructure:"args"`
+	StoreAs string   `mapstructure:"store_as"`
 }
 
 // Validate checks that the binary step config is valid.
@@ -30,11 +35,9 @@ func (c BinaryStepConfig) Validate() error {
 
 // FileCopyConfig represents configuration for file.copy step
 type FileCopyConfig struct {
-	Name      string                 `mapstructure:"name"`
-	Enabled   *bool                  `mapstructure:"enabled"`
-	From      string                 `mapstructure:"from"`
-	To        string                 `mapstructure:"to"`
-	Condition map[string]interface{} `mapstructure:"condition"`
+	BaseStepConfig
+	From string `mapstructure:"from"`
+	To   string `mapstructure:"to"`
 }
 
 // Validate checks that required fields are present for file.copy step
@@ -50,11 +53,9 @@ func (c FileCopyConfig) Validate() error {
 
 // BashRunConfig represents configuration for bash.run step
 type BashRunConfig struct {
-	Name      string                 `mapstructure:"name"`
-	Enabled   *bool                  `mapstructure:"enabled"`
-	Command   string                 `mapstructure:"command"`
-	StoreAs   string                 `mapstructure:"store_as"`
-	Condition map[string]interface{} `mapstructure:"condition"`
+	BaseStepConfig
+	Command string `mapstructure:"command"`
+	StoreAs string `mapstructure:"store_as"`
 }
 
 // Validate checks that required fields are present for bash.run step
@@ -67,11 +68,9 @@ func (c BashRunConfig) Validate() error {
 
 // CommandRunConfig represents configuration for command.run step
 type CommandRunConfig struct {
-	Name      string                 `mapstructure:"name"`
-	Enabled   *bool                  `mapstructure:"enabled"`
-	Command   string                 `mapstructure:"command"`
-	StoreAs   string                 `mapstructure:"store_as"`
-	Condition map[string]interface{} `mapstructure:"condition"`
+	BaseStepConfig
+	Command string `mapstructure:"command"`
+	StoreAs string `mapstructure:"store_as"`
 }
 
 // Validate checks that required fields are present for command.run step
@@ -84,12 +83,10 @@ func (c CommandRunConfig) Validate() error {
 
 // EnvReadConfig represents configuration for env.read step
 type EnvReadConfig struct {
-	Name      string                 `mapstructure:"name"`
-	Enabled   *bool                  `mapstructure:"enabled"`
-	Key       string                 `mapstructure:"key"`
-	StoreAs   string                 `mapstructure:"store_as"`
-	File      string                 `mapstructure:"file"`
-	Condition map[string]interface{} `mapstructure:"condition"`
+	BaseStepConfig
+	Key     string `mapstructure:"key"`
+	StoreAs string `mapstructure:"store_as"`
+	File    string `mapstructure:"file"`
 }
 
 // Validate checks that required fields are present for env.read step
@@ -102,12 +99,10 @@ func (c EnvReadConfig) Validate() error {
 
 // EnvWriteConfig represents configuration for env.write step
 type EnvWriteConfig struct {
-	Name      string                 `mapstructure:"name"`
-	Enabled   *bool                  `mapstructure:"enabled"`
-	Key       string                 `mapstructure:"key"`
-	Value     string                 `mapstructure:"value"`
-	File      string                 `mapstructure:"file"`
-	Condition map[string]interface{} `mapstructure:"condition"`
+	BaseStepConfig
+	Key   string `mapstructure:"key"`
+	Value string `mapstructure:"value"`
+	File  string `mapstructure:"file"`
 }
 
 // Validate checks that required fields are present for env.write step
@@ -120,11 +115,9 @@ func (c EnvWriteConfig) Validate() error {
 
 // DbCreateConfig represents configuration for db.create step
 type DbCreateConfig struct {
-	Name      string                 `mapstructure:"name"`
-	Enabled   *bool                  `mapstructure:"enabled"`
-	Args      []string               `mapstructure:"args"`
-	Type      string                 `mapstructure:"type"`
-	Condition map[string]interface{} `mapstructure:"condition"`
+	BaseStepConfig
+	Args []string `mapstructure:"args"`
+	Type string   `mapstructure:"type"`
 }
 
 // Validate checks that the db.create step config is valid.
@@ -135,11 +128,9 @@ func (c DbCreateConfig) Validate() error {
 
 // DbDestroyConfig represents configuration for db.destroy step
 type DbDestroyConfig struct {
-	Name      string                 `mapstructure:"name"`
-	Enabled   *bool                  `mapstructure:"enabled"`
-	Args      []string               `mapstructure:"args"`
-	Type      string                 `mapstructure:"type"`
-	Condition map[string]interface{} `mapstructure:"condition"`
+	BaseStepConfig
+	Args []string `mapstructure:"args"`
+	Type string   `mapstructure:"type"`
 }
 
 // Validate checks that the db.destroy step config is valid.
@@ -152,73 +143,63 @@ func (c DbDestroyConfig) Validate() error {
 // The stepName parameter is used to determine the step type for validation.
 // This is the main entry point for step validation.
 func ValidateStepConfig(stepName string, cfg StepConfig) error {
+	base := BaseStepConfig{
+		Name:      stepName,
+		Enabled:   cfg.Enabled,
+		Condition: cfg.Condition,
+	}
+
 	switch stepName {
 	case "file.copy":
 		return FileCopyConfig{
-			Name:      stepName,
-			Enabled:   cfg.Enabled,
-			From:      cfg.From,
-			To:        cfg.To,
-			Condition: cfg.Condition,
+			BaseStepConfig: base,
+			From:           cfg.From,
+			To:             cfg.To,
 		}.Validate()
 	case "bash.run":
 		return BashRunConfig{
-			Name:      stepName,
-			Enabled:   cfg.Enabled,
-			Command:   cfg.Command,
-			StoreAs:   cfg.StoreAs,
-			Condition: cfg.Condition,
+			BaseStepConfig: base,
+			Command:        cfg.Command,
+			StoreAs:        cfg.StoreAs,
 		}.Validate()
 	case "command.run":
 		return CommandRunConfig{
-			Name:      stepName,
-			Enabled:   cfg.Enabled,
-			Command:   cfg.Command,
-			StoreAs:   cfg.StoreAs,
-			Condition: cfg.Condition,
+			BaseStepConfig: base,
+			Command:        cfg.Command,
+			StoreAs:        cfg.StoreAs,
 		}.Validate()
 	case "env.read":
 		return EnvReadConfig{
-			Name:      stepName,
-			Enabled:   cfg.Enabled,
-			Key:       cfg.Key,
-			StoreAs:   cfg.StoreAs,
-			File:      cfg.File,
-			Condition: cfg.Condition,
+			BaseStepConfig: base,
+			Key:            cfg.Key,
+			StoreAs:        cfg.StoreAs,
+			File:           cfg.File,
 		}.Validate()
 	case "env.write":
 		return EnvWriteConfig{
-			Name:      stepName,
-			Enabled:   cfg.Enabled,
-			Key:       cfg.Key,
-			Value:     cfg.Value,
-			File:      cfg.File,
-			Condition: cfg.Condition,
+			BaseStepConfig: base,
+			Key:            cfg.Key,
+			Value:          cfg.Value,
+			File:           cfg.File,
 		}.Validate()
 	case "db.create":
 		return DbCreateConfig{
-			Name:      stepName,
-			Enabled:   cfg.Enabled,
-			Args:      cfg.Args,
-			Type:      cfg.Type,
-			Condition: cfg.Condition,
+			BaseStepConfig: base,
+			Args:           cfg.Args,
+			Type:           cfg.Type,
 		}.Validate()
 	case "db.destroy":
 		return DbDestroyConfig{
-			Name:      stepName,
-			Enabled:   cfg.Enabled,
-			Args:      cfg.Args,
-			Type:      cfg.Type,
-			Condition: cfg.Condition,
+			BaseStepConfig: base,
+			Args:           cfg.Args,
+			Type:           cfg.Type,
 		}.Validate()
 	default:
 		// Binary steps (php, npm, composer, etc.) and unknown steps
 		return BinaryStepConfig{
-			Name:      stepName,
-			Enabled:   cfg.Enabled,
-			Args:      cfg.Args,
-			StoreAs:   cfg.StoreAs,
-			Condition: cfg.Condition,
+			BaseStepConfig: base,
+			Args:           cfg.Args,
+			StoreAs:        cfg.StoreAs,
 		}.Validate()
 	}
 }

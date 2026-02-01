@@ -191,17 +191,17 @@ func TestFileCopyConfig_Validate(t *testing.T) {
 		{
 			name: "valid config",
 			config: FileCopyConfig{
-				Name: "file.copy",
-				From: "source.txt",
-				To:   "dest.txt",
+				BaseStepConfig: BaseStepConfig{Name: "file.copy"},
+				From:           "source.txt",
+				To:             "dest.txt",
 			},
 			wantErr: false,
 		},
 		{
 			name: "missing from",
 			config: FileCopyConfig{
-				Name: "file.copy",
-				To:   "dest.txt",
+				BaseStepConfig: BaseStepConfig{Name: "file.copy"},
+				To:             "dest.txt",
 			},
 			wantErr: true,
 			errMsg:  "file.copy: 'from' is required",
@@ -209,8 +209,8 @@ func TestFileCopyConfig_Validate(t *testing.T) {
 		{
 			name: "missing to",
 			config: FileCopyConfig{
-				Name: "file.copy",
-				From: "source.txt",
+				BaseStepConfig: BaseStepConfig{Name: "file.copy"},
+				From:           "source.txt",
 			},
 			wantErr: true,
 			errMsg:  "file.copy: 'to' is required",
@@ -218,7 +218,7 @@ func TestFileCopyConfig_Validate(t *testing.T) {
 		{
 			name: "missing both",
 			config: FileCopyConfig{
-				Name: "file.copy",
+				BaseStepConfig: BaseStepConfig{Name: "file.copy"},
 			},
 			wantErr: true,
 			errMsg:  "file.copy: 'from' is required",
@@ -255,15 +255,15 @@ func TestBashRunConfig_Validate(t *testing.T) {
 		{
 			name: "valid config with command",
 			config: BashRunConfig{
-				Name:    "bash.run",
-				Command: "echo hello",
+				BaseStepConfig: BaseStepConfig{Name: "bash.run"},
+				Command:        "echo hello",
 			},
 			wantErr: false,
 		},
 		{
 			name: "missing command",
 			config: BashRunConfig{
-				Name: "bash.run",
+				BaseStepConfig: BaseStepConfig{Name: "bash.run"},
 			},
 			wantErr: true,
 			errMsg:  "bash.run: 'command' is required",
@@ -271,8 +271,8 @@ func TestBashRunConfig_Validate(t *testing.T) {
 		{
 			name: "empty command",
 			config: BashRunConfig{
-				Name:    "bash.run",
-				Command: "",
+				BaseStepConfig: BaseStepConfig{Name: "bash.run"},
+				Command:        "",
 			},
 			wantErr: true,
 			errMsg:  "bash.run: 'command' is required",
@@ -309,25 +309,25 @@ func TestEnvReadConfig_Validate(t *testing.T) {
 		{
 			name: "valid config with key",
 			config: EnvReadConfig{
-				Name:    "env.read",
-				Key:     "DB_DATABASE",
-				StoreAs: "Database",
+				BaseStepConfig: BaseStepConfig{Name: "env.read"},
+				Key:            "DB_DATABASE",
+				StoreAs:        "Database",
 			},
 			wantErr: false,
 		},
 		{
 			name: "valid config with key only",
 			config: EnvReadConfig{
-				Name: "env.read",
-				Key:  "DB_DATABASE",
+				BaseStepConfig: BaseStepConfig{Name: "env.read"},
+				Key:            "DB_DATABASE",
 			},
 			wantErr: false,
 		},
 		{
 			name: "missing key",
 			config: EnvReadConfig{
-				Name:    "env.read",
-				StoreAs: "Database",
+				BaseStepConfig: BaseStepConfig{Name: "env.read"},
+				StoreAs:        "Database",
 			},
 			wantErr: true,
 			errMsg:  "env.read: 'key' is required",
@@ -364,25 +364,25 @@ func TestEnvWriteConfig_Validate(t *testing.T) {
 		{
 			name: "valid config with key and value",
 			config: EnvWriteConfig{
-				Name:  "env.write",
-				Key:   "DB_DATABASE",
-				Value: "test_db",
+				BaseStepConfig: BaseStepConfig{Name: "env.write"},
+				Key:            "DB_DATABASE",
+				Value:          "test_db",
 			},
 			wantErr: false,
 		},
 		{
 			name: "valid config with key only (value can be empty)",
 			config: EnvWriteConfig{
-				Name: "env.write",
-				Key:  "DB_DATABASE",
+				BaseStepConfig: BaseStepConfig{Name: "env.write"},
+				Key:            "DB_DATABASE",
 			},
 			wantErr: false,
 		},
 		{
 			name: "missing key",
 			config: EnvWriteConfig{
-				Name:  "env.write",
-				Value: "test_db",
+				BaseStepConfig: BaseStepConfig{Name: "env.write"},
+				Value:          "test_db",
 			},
 			wantErr: true,
 			errMsg:  "env.write: 'key' is required",
@@ -412,9 +412,9 @@ func TestEnvWriteConfig_Validate(t *testing.T) {
 func TestDbConfigs_Validate(t *testing.T) {
 	t.Run("db.create accepts all optional fields", func(t *testing.T) {
 		config := DbCreateConfig{
-			Name: "db.create",
-			Type: "mysql",
-			Args: []string{"--charset=utf8mb4"},
+			BaseStepConfig: BaseStepConfig{Name: "db.create"},
+			Type:           "mysql",
+			Args:           []string{"--charset=utf8mb4"},
 		}
 		if err := config.Validate(); err != nil {
 			t.Errorf("Validate() unexpected error = %v", err)
@@ -423,7 +423,7 @@ func TestDbConfigs_Validate(t *testing.T) {
 
 	t.Run("db.create accepts no fields", func(t *testing.T) {
 		config := DbCreateConfig{
-			Name: "db.create",
+			BaseStepConfig: BaseStepConfig{Name: "db.create"},
 		}
 		if err := config.Validate(); err != nil {
 			t.Errorf("Validate() unexpected error = %v", err)
@@ -432,9 +432,9 @@ func TestDbConfigs_Validate(t *testing.T) {
 
 	t.Run("db.destroy accepts all optional fields", func(t *testing.T) {
 		config := DbDestroyConfig{
-			Name: "db.destroy",
-			Type: "mysql",
-			Args: []string{"--force"},
+			BaseStepConfig: BaseStepConfig{Name: "db.destroy"},
+			Type:           "mysql",
+			Args:           []string{"--force"},
 		}
 		if err := config.Validate(); err != nil {
 			t.Errorf("Validate() unexpected error = %v", err)
@@ -452,15 +452,15 @@ func TestBinaryStepConfig_Validate(t *testing.T) {
 		{
 			name: "valid config with name",
 			config: BinaryStepConfig{
-				Name: "php",
-				Args: []string{"-v"},
+				BaseStepConfig: BaseStepConfig{Name: "php"},
+				Args:           []string{"-v"},
 			},
 			wantErr: false,
 		},
 		{
 			name: "valid config with name only",
 			config: BinaryStepConfig{
-				Name: "npm",
+				BaseStepConfig: BaseStepConfig{Name: "npm"},
 			},
 			wantErr: false,
 		},
