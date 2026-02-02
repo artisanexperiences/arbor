@@ -70,6 +70,12 @@ Arguments:
 		}
 		ui.PrintSuccess(fmt.Sprintf("Cloned %s", repo))
 
+		// Configure fetch refspec for remote tracking
+		if err := git.ConfigureFetchRefspec(barePath, repo); err != nil {
+			return fmt.Errorf("configuring fetch refspec: %w", err)
+		}
+		ui.PrintSuccess("Configured fetch refspec for remote tracking")
+
 		defaultBranch, err := git.GetDefaultBranch(barePath)
 		if err != nil {
 			defaultBranch = config.DefaultBranch
