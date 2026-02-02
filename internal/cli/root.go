@@ -114,8 +114,10 @@ Commands:
   remove    Remove a worktree
   prune     Remove merged worktrees
   scaffold  Run scaffold steps for a worktree
+  repair    Repair git configuration for existing project
   destroy   Completely destroy an arbor project
   install   Setup global configuration
+  version   Show arbor version
 
 Run 'arbor <command> --help' for more information.`
 

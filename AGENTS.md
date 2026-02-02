@@ -172,6 +172,7 @@ This approach ensures:
 4. Add tests in `internal/cli/commandname_test.go`
 5. Update documentation:
    - Update `README.md` with command reference and examples
+   - Update `internal/cli/root.go` `printBanner()` to include the new command in the banner list
    - Update AGENTS.md quick reference section if needed
 
 ### Add a New Scaffold Step
