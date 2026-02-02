@@ -155,7 +155,7 @@ func TestDbCreateStep(t *testing.T) {
 		assert.True(t, strings.HasPrefix(createCalls[0], "my_app_"), "Database name should start with sanitized site name")
 	})
 
-	t.Run("writes DbSuffix to worktree-local arbor.yaml", func(t *testing.T) {
+	t.Run("writes DbSuffix to local state", func(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envFile := filepath.Join(tmpDir, ".env")
@@ -463,7 +463,7 @@ func TestDbDestroyStep(t *testing.T) {
 		assert.True(t, step.Condition(ctx))
 	})
 
-	t.Run("returns nil when no DbSuffix in context or worktree config", func(t *testing.T) {
+	t.Run("returns nil when no DbSuffix in context or local state", func(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envFile := filepath.Join(tmpDir, ".env")
@@ -481,7 +481,7 @@ func TestDbDestroyStep(t *testing.T) {
 		assert.NoError(t, err, "Should return nil when no DbSuffix found")
 	})
 
-	t.Run("reads DbSuffix from worktree-local arbor.yaml", func(t *testing.T) {
+	t.Run("reads DbSuffix from local state", func(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envFile := filepath.Join(tmpDir, ".env")
@@ -503,7 +503,7 @@ func TestDbDestroyStep(t *testing.T) {
 
 		err := step.Run(ctx, types.StepOptions{Verbose: false})
 		assert.NoError(t, err)
-		assert.Equal(t, "swift_runner", ctx.GetDbSuffix(), "DbSuffix should be read from worktree config")
+		assert.Equal(t, "swift_runner", ctx.GetDbSuffix(), "DbSuffix should be read from local state")
 
 		listCalls := mockClient.listCalls
 		assert.Len(t, listCalls, 1)
@@ -544,8 +544,8 @@ func TestDbDestroyStep(t *testing.T) {
 			t.Fatalf("writing env file: %v", err)
 		}
 
-		if err := config.WriteWorktreeConfig(tmpDir, map[string]string{"db_suffix": "test_suffix"}); err != nil {
-			t.Fatalf("writing worktree config: %v", err)
+		if err := config.WriteLocalState(tmpDir, config.LocalState{DbSuffix: "test_suffix"}); err != nil {
+			t.Fatalf("writing local state: %v", err)
 		}
 
 		mockClient := NewMockDatabaseClient()

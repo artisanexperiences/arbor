@@ -51,7 +51,7 @@ APP_NAME=original_app
 }
 
 func TestIntegration_DatabaseCreationWithEnv(t *testing.T) {
-	t.Run("db.create generates suffix and persists to worktree config", func(t *testing.T) {
+	t.Run("db.create generates suffix and persists to local state", func(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envContent := `DB_CONNECTION=mysql
@@ -160,7 +160,7 @@ APP_NAME=myapp
 }
 
 func TestIntegration_DatabaseDestroyCleanup(t *testing.T) {
-	t.Run("db.destroy reads suffix from worktree config and cleans up", func(t *testing.T) {
+	t.Run("db.destroy reads suffix from local state and cleans up", func(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envContent := `DB_CONNECTION=mysql
@@ -185,7 +185,7 @@ APP_NAME=myapp
 		require.NoError(t, err)
 
 		suffix := ctx.GetDbSuffix()
-		assert.Equal(t, "swift_runner", suffix, "DbSuffix should be read from worktree config")
+		assert.Equal(t, "swift_runner", suffix, "DbSuffix should be read from local state")
 	})
 }
 
@@ -259,7 +259,7 @@ APP_NAME=myapp
 }
 
 func TestIntegration_RunScaffoldSuffixLoading(t *testing.T) {
-	t.Run("RunScaffold loads existing suffix from worktree config", func(t *testing.T) {
+	t.Run("RunScaffold loads existing suffix from local state", func(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		envContent := `DB_CONNECTION=mysql

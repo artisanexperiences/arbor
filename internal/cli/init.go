@@ -166,7 +166,7 @@ func init() {
 
 	initCmd.Flags().String("preset", "", "Project preset (laravel, php)")
 	initCmd.Flags().Bool("skip-scaffold", false, "Skip scaffold steps during init")
-	initCmd.Flags().Bool("use-repo-config", true, "Automatically use repository config (non-interactive)")
+	initCmd.Flags().Bool("use-repo-config", true, "Automatically use repository config (non-interactive, default: true)")
 }
 
 // checkAndCopyRepoConfig checks for arbor.yaml in the repository and prompts to copy it
