@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-02-03
+
+### Added
+
+- Separate local state from team config
+  - New `.arbor.local` file for runtime state (gitignored)
+  - Local state stores `db_suffix` for database naming
+  - Automatic migration from old config format on first run
+  - No manual intervention required - seamless upgrade
+
+### Changed
+
+- `arbor.yaml` now contains only team-shared configuration
+  - Scaffold steps and presets remain in team config
+  - Database suffix moves to local state file
+  - Cleaner separation between shared and local settings
+
+### Removed
+
+- Deprecated worktree config helpers from config package
+  - Simplified configuration management
+  - Reduced code complexity
+
 ## [0.7.0] - 2026-02-02
 
 ### Added
@@ -201,6 +224,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Interactive commands (work, prune)
 - Multi-platform builds and CI/CD
 
+[0.8.0]: https://github.com/michaeldyrynda/arbor/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/michaeldyrynda/arbor/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/michaeldyrynda/arbor/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/michaeldyrynda/arbor/compare/v0.4.2...v0.5.0
