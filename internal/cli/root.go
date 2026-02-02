@@ -110,6 +110,7 @@ Commands:
   init      Initialize a new repository
   work      Create or checkout a worktree
   list      List all worktrees
+  sync      Sync current worktree with upstream branch
   remove    Remove a worktree
   prune     Remove merged worktrees
   scaffold  Run scaffold steps for a worktree

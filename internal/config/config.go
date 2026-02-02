@@ -41,6 +41,14 @@ type Config struct {
 	Scaffold      ScaffoldConfig        `mapstructure:"scaffold"`
 	Cleanup       CleanupConfig         `mapstructure:"cleanup"`
 	Tools         map[string]ToolConfig `mapstructure:"tools"`
+	Sync          SyncConfig            `mapstructure:"sync"`
+}
+
+// SyncConfig represents sync configuration for the sync command
+type SyncConfig struct {
+	Upstream string `mapstructure:"upstream"`
+	Strategy string `mapstructure:"strategy"`
+	Remote   string `mapstructure:"remote"`
 }
 
 // ScaffoldConfig represents scaffold configuration
@@ -247,6 +255,35 @@ func SaveProject(path string, config *Config) error {
 	}
 	if config.DefaultBranch != "" {
 		existing["default_branch"] = config.DefaultBranch
+	}
+
+	// Merge sync config if any values are set
+	if config.Sync.Upstream != "" || config.Sync.Strategy != "" || config.Sync.Remote != "" {
+		if existingSync, ok := existing["sync"].(map[string]interface{}); ok {
+			// Update existing sync section
+			if config.Sync.Upstream != "" {
+				existingSync["upstream"] = config.Sync.Upstream
+			}
+			if config.Sync.Strategy != "" {
+				existingSync["strategy"] = config.Sync.Strategy
+			}
+			if config.Sync.Remote != "" {
+				existingSync["remote"] = config.Sync.Remote
+			}
+		} else {
+			// Create new sync section
+			syncData := make(map[string]interface{})
+			if config.Sync.Upstream != "" {
+				syncData["upstream"] = config.Sync.Upstream
+			}
+			if config.Sync.Strategy != "" {
+				syncData["strategy"] = config.Sync.Strategy
+			}
+			if config.Sync.Remote != "" {
+				syncData["remote"] = config.Sync.Remote
+			}
+			existing["sync"] = syncData
+		}
 	}
 
 	// Marshal and write back

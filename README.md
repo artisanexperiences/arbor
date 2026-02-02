@@ -55,6 +55,18 @@ arbor work feature/user-auth
 # Create a worktree from a specific base branch
 arbor work feature/user-auth -b develop
 
+# Sync current worktree with upstream (defaults to main, uses rebase)
+arbor sync
+
+# Sync with a specific upstream branch
+arbor sync --upstream develop
+
+# Sync using merge instead of rebase
+arbor sync --strategy merge
+
+# Save sync settings to arbor.yaml for future use
+arbor sync --upstream develop --strategy rebase --save
+
 # List all worktrees with their status
 arbor list
 
@@ -82,6 +94,61 @@ See [AGENTS.md](./AGENTS.md) for development guide.
 - Testing strategy
 
 ## Commands
+
+### `arbor sync`
+
+Synchronizes the current worktree branch with an upstream branch by fetching the latest changes and rebasing or merging.
+
+```bash
+# Sync with default settings (upstream: main, strategy: rebase)
+arbor sync
+
+# Sync with a specific upstream branch
+arbor sync --upstream develop
+arbor sync -u develop
+
+# Sync using merge instead of rebase
+arbor sync --strategy merge
+arbor sync -s merge
+
+# Use a specific remote
+arbor sync --remote upstream
+arbor sync -r upstream
+
+# Skip all confirmations
+arbor sync --yes
+arbor sync -y
+
+# Save sync settings to arbor.yaml for future use
+arbor sync --save
+
+# Combination of options
+arbor sync --upstream main --strategy rebase --save
+```
+
+**Configuration:**
+
+Sync settings can be persisted in `arbor.yaml`:
+
+```yaml
+sync:
+  upstream: main
+  strategy: rebase
+  remote: origin
+```
+
+The command resolves settings in this order:
+1. CLI flags (`--upstream`, `--strategy`, `--remote`)
+2. Project config (`arbor.yaml`)
+3. Project `default_branch`
+4. Interactive selection (if in interactive mode)
+
+**Notes:**
+- Must be run from within a worktree (not project root)
+- Fails if worktree is on detached HEAD
+- Warns if worktree has uncommitted changes
+- Detects and blocks if rebase or merge is already in progress
+- Provides guidance when conflicts occur
 
 ### `arbor scaffold [PATH]`
 
