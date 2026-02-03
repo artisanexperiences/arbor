@@ -6,11 +6,17 @@ import (
 	"github.com/michaeldyrynda/arbor/internal/cli"
 )
 
-// version is set at build time via -ldflags
-var version = "dev"
+// These variables are set at build time via -ldflags
+var (
+	version = "dev"
+	commit  = "unknown"
+	date    = "unknown"
+)
 
 func main() {
 	cli.Version = version
+	cli.Commit = commit
+	cli.BuildDate = date
 	if err := cli.Execute(); err != nil {
 		os.Exit(1)
 	}

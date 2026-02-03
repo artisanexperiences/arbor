@@ -6,15 +6,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Version is set at build time via -ldflags
-var Version = "dev"
+// These variables are set at build time via -ldflags
+var (
+	Version   = "dev"
+	Commit    = "unknown"
+	BuildDate = "unknown"
+)
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print version information",
 	Long:  `Display the current version of Arbor.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("arbor version %s\n", Version)
+		fmt.Printf("arbor version %s (commit: %s, built: %s)\n", Version, Commit, BuildDate)
 	},
 }
 
