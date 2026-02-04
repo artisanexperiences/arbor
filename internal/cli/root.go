@@ -97,9 +97,12 @@ func printBanner() {
 		fmt.Println(lipgloss.JoinHorizontal(lipgloss.Left, lineParts...))
 	}
 
+	versionStyle := lipgloss.NewStyle().
+		Foreground(ui.ColorMuted).
+		MarginTop(1)
+
 	subtitleStyle := lipgloss.NewStyle().
 		Foreground(ui.ColorMuted).
-		MarginTop(1).
 		MarginBottom(1)
 
 	commandsStyle := lipgloss.NewStyle().
@@ -121,6 +124,8 @@ Commands:
 
 Run 'arbor <command> --help' for more information.`
 
+	versionLine := fmt.Sprintf("Version %s (commit: %s, built: %s)", Version, Commit, BuildDate)
+	fmt.Println(versionStyle.Render(versionLine))
 	fmt.Println(subtitleStyle.Render("Git Worktree Manager for Agentic Development"))
 	fmt.Println(commandsStyle.Render(commands))
 }
