@@ -451,6 +451,56 @@ func TestIntegration_PreFlightChecks(t *testing.T) {
 		assert.NoError(t, err, "Pre-flight should pass when all dependencies exist")
 	})
 
+	t.Run("pre-flight failure - map form conditions", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		cfg := &config.Config{
+			Scaffold: config.ScaffoldConfig{
+				PreFlight: &config.PreFlight{
+					Condition: map[string]interface{}{
+						"env_exists":     map[string]interface{}{"env": "NONEXISTENT_MAP_ENV"},
+						"command_exists": map[string]interface{}{"command": "nonexistent-map-command"},
+						"file_exists":    map[string]interface{}{"file": "missing-map-file.txt"},
+					},
+				},
+				Steps: []config.StepConfig{},
+			},
+		}
+
+		manager := NewScaffoldManager()
+		err := manager.RunScaffold(tmpDir, "test", "testrepo", "testsite", "", cfg, false, false, true)
+		require.Error(t, err, "Pre-flight should fail when map form dependencies are missing")
+		assert.Contains(t, err.Error(), "Missing environment variables")
+		assert.Contains(t, err.Error(), "NONEXISTENT_MAP_ENV")
+		assert.Contains(t, err.Error(), "Missing commands")
+		assert.Contains(t, err.Error(), "nonexistent-map-command")
+		assert.Contains(t, err.Error(), "Missing files")
+		assert.Contains(t, err.Error(), "missing-map-file.txt")
+	})
+
+	t.Run("pre-flight failure - nested not condition", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		t.Setenv("NESTED_MISSING_ENV", "present")
+
+		cfg := &config.Config{
+			Scaffold: config.ScaffoldConfig{
+				PreFlight: &config.PreFlight{
+					Condition: map[string]interface{}{
+						"not": map[string]interface{}{
+							"env_exists": []interface{}{"NESTED_MISSING_ENV"},
+						},
+					},
+				},
+				Steps: []config.StepConfig{},
+			},
+		}
+
+		manager := NewScaffoldManager()
+		err := manager.RunScaffold(tmpDir, "test", "testrepo", "testsite", "", cfg, false, false, true)
+		require.Error(t, err, "Pre-flight should fail when nested condition fails")
+		assert.EqualError(t, err, "pre-flight checks failed")
+	})
+
 	t.Run("pre-flight failure - missing env var", func(t *testing.T) {
 		tmpDir := t.TempDir()
 

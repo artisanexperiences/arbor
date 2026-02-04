@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/michaeldyrynda/arbor/internal/config"
@@ -185,6 +186,18 @@ func (m *ScaffoldManager) stepsFromConfig(stepConfigs []config.StepConfig) ([]ty
 func (m *ScaffoldManager) RunScaffold(worktreePath, branch, repoName, siteName, preset string, cfg *config.Config, dryRun, verbose, quiet bool) error {
 	ctx := m.newScaffoldContext(worktreePath, branch, repoName, siteName, preset)
 
+	// Run pre-flight checks with spinner
+	if !quiet {
+		if err := m.runPreFlightWithSpinner(&ctx, &cfg.Scaffold); err != nil {
+			return err
+		}
+	} else {
+		// Quiet mode: run without spinner
+		if err := m.runPreFlightChecks(&ctx, &cfg.Scaffold); err != nil {
+			return err
+		}
+	}
+
 	// Migrate db_suffix from arbor.yaml to .arbor.local if present
 	if !dryRun {
 		if _, err := config.MigrateDbSuffixToLocal(worktreePath); err != nil {
@@ -208,18 +221,6 @@ func (m *ScaffoldManager) RunScaffold(worktreePath, branch, repoName, siteName, 
 		}
 	} else {
 		ctx.SetDbSuffix(localState.DbSuffix)
-	}
-
-	// Run pre-flight checks with spinner
-	if !quiet {
-		if err := m.runPreFlightWithSpinner(&ctx, &cfg.Scaffold); err != nil {
-			return err
-		}
-	} else {
-		// Quiet mode: run without spinner
-		if err := m.runPreFlightChecks(&ctx, &cfg.Scaffold); err != nil {
-			return err
-		}
 	}
 
 	stepsList, err := m.GetStepsForWorktree(cfg, worktreePath, branch)
@@ -325,32 +326,35 @@ func (m *ScaffoldManager) runPreFlightWithSpinner(ctx *types.ScaffoldContext, cf
 func (m *ScaffoldManager) generatePreFlightError(ctx *types.ScaffoldContext, conditions map[string]interface{}) error {
 	var errorParts []string
 
-	// Check each condition type to report specific failures
-	if envList, ok := conditions["env_exists"]; ok {
-		missing := m.checkMissingEnvVars(envList)
-		if len(missing) > 0 {
-			errorParts = append(errorParts,
-				fmt.Sprintf("Missing environment variables:\n  - %s",
-					strings.Join(missing, "\n  - ")))
-		}
+	collected := m.collectPreFlightValues(conditions)
+
+	missingEnv := uniqueStringsPreserveOrder(m.checkMissingEnvVars(collected.envs))
+	if len(missingEnv) > 0 {
+		errorParts = append(errorParts,
+			fmt.Sprintf("Missing environment variables:\n  - %s",
+				strings.Join(missingEnv, "\n  - ")))
 	}
 
-	if cmdList, ok := conditions["command_exists"]; ok {
-		missing := m.checkMissingCommands(cmdList)
-		if len(missing) > 0 {
-			errorParts = append(errorParts,
-				fmt.Sprintf("Missing commands:\n  - %s",
-					strings.Join(missing, "\n  - ")))
-		}
+	missingCommands := uniqueStringsPreserveOrder(m.checkMissingCommands(collected.commands))
+	if len(missingCommands) > 0 {
+		errorParts = append(errorParts,
+			fmt.Sprintf("Missing commands:\n  - %s",
+				strings.Join(missingCommands, "\n  - ")))
 	}
 
-	if fileList, ok := conditions["file_exists"]; ok {
-		missing := m.checkMissingFiles(ctx, fileList)
-		if len(missing) > 0 {
-			errorParts = append(errorParts,
-				fmt.Sprintf("Missing files:\n  - %s",
-					strings.Join(missing, "\n  - ")))
-		}
+	missingFiles, fileErrors := m.checkMissingFiles(ctx, collected.files)
+	missingFiles = uniqueStringsPreserveOrder(missingFiles)
+	if len(missingFiles) > 0 {
+		errorParts = append(errorParts,
+			fmt.Sprintf("Missing files:\n  - %s",
+				strings.Join(missingFiles, "\n  - ")))
+	}
+
+	fileErrors = uniqueStringsPreserveOrder(fileErrors)
+	if len(fileErrors) > 0 {
+		errorParts = append(errorParts,
+			fmt.Sprintf("File check errors:\n  - %s",
+				strings.Join(fileErrors, "\n  - ")))
 	}
 
 	if len(errorParts) > 0 {
@@ -361,22 +365,101 @@ func (m *ScaffoldManager) generatePreFlightError(ctx *types.ScaffoldContext, con
 	return fmt.Errorf("pre-flight checks failed")
 }
 
+type preFlightValues struct {
+	envs     []string
+	commands []string
+	files    []string
+}
+
+func (m *ScaffoldManager) collectPreFlightValues(conditions map[string]interface{}) preFlightValues {
+	var values preFlightValues
+	collectPreFlightValuesFromCondition(conditions, &values)
+	return values
+}
+
+func collectPreFlightValuesFromCondition(condition interface{}, values *preFlightValues) {
+	switch v := condition.(type) {
+	case map[string]interface{}:
+		if notValue, ok := v["not"]; ok {
+			collectPreFlightValuesFromCondition(notValue, values)
+			return
+		}
+
+		keys := make([]string, 0, len(v))
+		for key := range v {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		for _, key := range keys {
+			value := v[key]
+			switch key {
+			case "env_exists":
+				values.envs = append(values.envs, extractStringValues(value, "env")...)
+			case "command_exists":
+				values.commands = append(values.commands, extractStringValues(value, "command")...)
+			case "file_exists":
+				values.files = append(values.files, extractStringValues(value, "file")...)
+			}
+		}
+	case []interface{}:
+		for _, item := range v {
+			collectPreFlightValuesFromCondition(item, values)
+		}
+	case []map[string]interface{}:
+		for _, item := range v {
+			collectPreFlightValuesFromCondition(item, values)
+		}
+	}
+}
+
+func extractStringValues(value interface{}, mapKey string) []string {
+	var values []string
+
+	switch v := value.(type) {
+	case string:
+		values = append(values, v)
+	case []string:
+		values = append(values, v...)
+	case []interface{}:
+		for _, item := range v {
+			if s, ok := item.(string); ok {
+				values = append(values, s)
+			}
+		}
+	case map[string]interface{}:
+		if s, ok := v[mapKey].(string); ok {
+			values = append(values, s)
+		}
+	}
+
+	return values
+}
+
+func uniqueStringsPreserveOrder(values []string) []string {
+	if len(values) == 0 {
+		return values
+	}
+
+	seen := make(map[string]struct{}, len(values))
+	unique := make([]string, 0, len(values))
+	for _, value := range values {
+		if _, ok := seen[value]; ok {
+			continue
+		}
+		seen[value] = struct{}{}
+		unique = append(unique, value)
+	}
+
+	return unique
+}
+
 // checkMissingEnvVars returns list of environment variables that don't exist.
 func (m *ScaffoldManager) checkMissingEnvVars(value interface{}) []string {
 	var missing []string
 
-	switch v := value.(type) {
-	case string:
-		if _, exists := os.LookupEnv(v); !exists {
-			missing = append(missing, v)
-		}
-	case []interface{}:
-		for _, item := range v {
-			if envName, ok := item.(string); ok {
-				if _, exists := os.LookupEnv(envName); !exists {
-					missing = append(missing, envName)
-				}
-			}
+	for _, envName := range extractStringValues(value, "env") {
+		if _, exists := os.LookupEnv(envName); !exists {
+			missing = append(missing, envName)
 		}
 	}
 
@@ -387,18 +470,9 @@ func (m *ScaffoldManager) checkMissingEnvVars(value interface{}) []string {
 func (m *ScaffoldManager) checkMissingCommands(value interface{}) []string {
 	var missing []string
 
-	switch v := value.(type) {
-	case string:
-		if _, err := exec.LookPath(v); err != nil {
-			missing = append(missing, v)
-		}
-	case []interface{}:
-		for _, item := range v {
-			if cmdName, ok := item.(string); ok {
-				if _, err := exec.LookPath(cmdName); err != nil {
-					missing = append(missing, cmdName)
-				}
-			}
+	for _, cmdName := range extractStringValues(value, "command") {
+		if _, err := exec.LookPath(cmdName); err != nil {
+			missing = append(missing, cmdName)
 		}
 	}
 
@@ -406,25 +480,20 @@ func (m *ScaffoldManager) checkMissingCommands(value interface{}) []string {
 }
 
 // checkMissingFiles returns list of files that don't exist in worktree.
-func (m *ScaffoldManager) checkMissingFiles(ctx *types.ScaffoldContext, value interface{}) []string {
+func (m *ScaffoldManager) checkMissingFiles(ctx *types.ScaffoldContext, value interface{}) ([]string, []string) {
 	var missing []string
+	var errors []string
 
-	switch v := value.(type) {
-	case string:
-		fullPath := filepath.Join(ctx.WorktreePath, v)
+	for _, path := range extractStringValues(value, "file") {
+		fullPath := filepath.Join(ctx.WorktreePath, path)
 		if _, err := os.Stat(fullPath); err != nil {
-			missing = append(missing, v)
-		}
-	case []interface{}:
-		for _, item := range v {
-			if path, ok := item.(string); ok {
-				fullPath := filepath.Join(ctx.WorktreePath, path)
-				if _, err := os.Stat(fullPath); err != nil {
-					missing = append(missing, path)
-				}
+			if os.IsNotExist(err) {
+				missing = append(missing, path)
+				continue
 			}
+			errors = append(errors, fmt.Sprintf("%s: %v", path, err))
 		}
 	}
 
-	return missing
+	return missing, errors
 }
