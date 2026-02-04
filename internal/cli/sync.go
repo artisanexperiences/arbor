@@ -88,23 +88,7 @@ Configuration can be set via flags, project config (arbor.yaml), or interactivel
 		// Track whether we created a stash so we can pop it later
 		var stashCreated bool
 
-		if hasChanges && autoStash {
-			if !quiet {
-				ui.PrintInfo("Auto-stashing all changes (tracked, untracked, and ignored files)...")
-			}
-
-			if !dryRun {
-				if err := git.StashAll(pc.CWD, "arbor sync auto-stash"); err != nil {
-					return fmt.Errorf("failed to stash changes: %w", err)
-				}
-				stashCreated = true
-				if !quiet {
-					ui.PrintSuccess("Changes stashed successfully")
-				}
-			} else {
-				ui.PrintInfo("[DRY RUN] Would stash all changes")
-			}
-		} else if hasChanges && !autoStash {
+		if hasChanges && !autoStash {
 			// Auto-stash disabled but there are changes - warn the user
 			if !quiet {
 				ui.PrintWarning("Warning: worktree has changes (auto-stash is disabled)")
@@ -205,6 +189,24 @@ Configuration can be set via flags, project config (arbor.yaml), or interactivel
 			return fmt.Errorf("remote %q not configured - add it with 'git remote add %s <url>'", remote, remote)
 		}
 
+		if hasChanges && autoStash {
+			if !quiet {
+				ui.PrintInfo("Auto-stashing all changes (tracked, untracked, and ignored files)...")
+			}
+
+			if !dryRun {
+				if err := git.StashAll(pc.CWD, "arbor sync auto-stash"); err != nil {
+					return fmt.Errorf("failed to stash changes: %w", err)
+				}
+				stashCreated = true
+				if !quiet {
+					ui.PrintSuccess("Changes stashed successfully")
+				}
+			} else {
+				ui.PrintInfo("[DRY RUN] Would stash all changes")
+			}
+		}
+
 		// Print info
 		if !quiet {
 			ui.PrintStep(fmt.Sprintf("Syncing branch '%s' with '%s/%s' using %s", currentBranch, remote, upstream, strategy))
@@ -298,6 +300,7 @@ Configuration can be set via flags, project config (arbor.yaml), or interactivel
 				Upstream: upstream,
 				Strategy: strategy,
 				Remote:   remote,
+				AutoStash: &autoStash,
 			}
 			if err := config.SaveProject(pc.ProjectPath, pc.Config); err != nil {
 				ui.PrintError(fmt.Sprintf("Failed to save sync config: %v", err))

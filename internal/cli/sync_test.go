@@ -12,6 +12,20 @@ import (
 	"github.com/artisanexperiences/arbor/internal/git"
 )
 
+func ensureSyncTestFlags(t *testing.T) {
+	t.Helper()
+
+	if syncCmd.Flags().Lookup("dry-run") == nil {
+		syncCmd.Flags().Bool("dry-run", false, "")
+	}
+	if syncCmd.Flags().Lookup("verbose") == nil {
+		syncCmd.Flags().Bool("verbose", false, "")
+	}
+	if syncCmd.Flags().Lookup("quiet") == nil {
+		syncCmd.Flags().Bool("quiet", false, "")
+	}
+}
+
 func TestSyncCommand_ValidatesInWorktree(t *testing.T) {
 	// Create a source repo
 	sourceDir := t.TempDir()
@@ -237,4 +251,76 @@ func TestSyncCommand_SaveConfig(t *testing.T) {
 	assert.Equal(t, "develop", loadedConfig.Sync.Upstream)
 	assert.Equal(t, "rebase", loadedConfig.Sync.Strategy)
 	assert.Equal(t, "origin", loadedConfig.Sync.Remote)
+}
+
+func TestSyncCommand_DoesNotStashWhenRemoteMissing(t *testing.T) {
+	ensureSyncTestFlags(t)
+
+	// Create a source repo
+	sourceDir := t.TempDir()
+	cmd := exec.Command("git", "init", "-b", "main")
+	cmd.Dir = sourceDir
+	requireNoError(t, cmd.Run())
+
+	cmd = exec.Command("git", "config", "user.email", "test@example.com")
+	cmd.Dir = sourceDir
+	requireNoError(t, cmd.Run())
+
+	cmd = exec.Command("git", "config", "user.name", "Test User")
+	cmd.Dir = sourceDir
+	requireNoError(t, cmd.Run())
+
+	readmePath := filepath.Join(sourceDir, "README.md")
+	requireNoError(t, os.WriteFile(readmePath, []byte("test"), 0644))
+
+	cmd = exec.Command("git", "add", ".")
+	cmd.Dir = sourceDir
+	requireNoError(t, cmd.Run())
+
+	cmd = exec.Command("git", "commit", "-m", "Initial commit")
+	cmd.Dir = sourceDir
+	requireNoError(t, cmd.Run())
+
+	// Clone to bare repo
+	projectDir := t.TempDir()
+	barePath := filepath.Join(projectDir, ".bare")
+	cmd = exec.Command("git", "clone", "--bare", sourceDir, barePath)
+	requireNoError(t, cmd.Run())
+
+	// Create worktree
+	featurePath := filepath.Join(projectDir, "feature")
+	requireNoError(t, git.CreateWorktree(barePath, featurePath, "feature", "main"))
+
+	// Create arbor.yaml
+	configContent := "site_name: test\npreset: laravel\ndefault_branch: main\n"
+	configPath := filepath.Join(projectDir, "arbor.yaml")
+	requireNoError(t, os.WriteFile(configPath, []byte(configContent), 0644))
+
+	// Add untracked file to trigger auto-stash
+	changePath := filepath.Join(featurePath, "untracked.txt")
+	requireNoError(t, os.WriteFile(changePath, []byte("changes"), 0644))
+
+	hasStash, err := git.HasStash(featurePath)
+	assert.NoError(t, err)
+	assert.False(t, hasStash)
+
+	originalDir, _ := os.Getwd()
+	defer os.Chdir(originalDir)
+	requireNoError(t, os.Chdir(featurePath))
+
+	defer func() {
+		requireNoError(t, syncCmd.Flags().Set("upstream", ""))
+		requireNoError(t, syncCmd.Flags().Set("remote", ""))
+	}()
+
+	requireNoError(t, syncCmd.Flags().Set("upstream", "main"))
+	requireNoError(t, syncCmd.Flags().Set("remote", "upstream"))
+
+	err = syncCmd.RunE(syncCmd, []string{})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "remote")
+
+	hasStash, err = git.HasStash(featurePath)
+	assert.NoError(t, err)
+	assert.False(t, hasStash)
 }
