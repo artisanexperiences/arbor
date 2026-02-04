@@ -297,9 +297,9 @@ Configuration can be set via flags, project config (arbor.yaml), or interactivel
 
 		if shouldSave {
 			pc.Config.Sync = config.SyncConfig{
-				Upstream: upstream,
-				Strategy: strategy,
-				Remote:   remote,
+				Upstream:  upstream,
+				Strategy:  strategy,
+				Remote:    remote,
 				AutoStash: &autoStash,
 			}
 			if err := config.SaveProject(pc.ProjectPath, pc.Config); err != nil {
