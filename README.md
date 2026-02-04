@@ -122,8 +122,17 @@ See [AGENTS.md](./AGENTS.md) for development guide.
 
 Synchronizes the current worktree branch with an upstream branch by fetching the latest changes and rebasing or merging.
 
+**Auto-Stashing (Default):**
+
+By default, `arbor sync` automatically stashes **all** changes before syncing, including:
+- Tracked modifications
+- Untracked files
+- Ignored files (like `.env`, `.env.testing`)
+
+This ensures your local changes are preserved even if they conflict with files in the upstream branch. After a successful sync, the stashed changes are automatically restored.
+
 ```bash
-# Sync with default settings (upstream: main, strategy: rebase)
+# Sync with default settings (upstream: main, strategy: rebase, auto-stash: on)
 arbor sync
 
 # Sync with a specific upstream branch
@@ -137,6 +146,9 @@ arbor sync -s merge
 # Use a specific remote
 arbor sync --remote upstream
 arbor sync -r upstream
+
+# Disable auto-stashing (not recommended)
+arbor sync --no-auto-stash
 
 # Skip all confirmations
 arbor sync --yes
@@ -158,10 +170,11 @@ sync:
   upstream: main
   strategy: rebase
   remote: origin
+  auto_stash: true  # Default: true, set to false to disable
 ```
 
 The command resolves settings in this order:
-1. CLI flags (`--upstream`, `--strategy`, `--remote`)
+1. CLI flags (`--upstream`, `--strategy`, `--remote`, `--no-auto-stash`)
 2. Project config (`arbor.yaml`)
 3. Project `default_branch`
 4. Interactive selection (if in interactive mode)
@@ -169,7 +182,8 @@ The command resolves settings in this order:
 **Notes:**
 - Must be run from within a worktree (not project root)
 - Fails if worktree is on detached HEAD
-- Warns if worktree has uncommitted changes
+- Auto-stashes all changes by default (can be disabled with `--no-auto-stash`)
+- If stash pop fails due to conflicts, the stash is preserved and instructions are provided
 - Detects and blocks if rebase or merge is already in progress
 - Provides guidance when conflicts occur
 

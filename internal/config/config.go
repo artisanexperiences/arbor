@@ -46,9 +46,10 @@ type Config struct {
 
 // SyncConfig represents sync configuration for the sync command
 type SyncConfig struct {
-	Upstream string `mapstructure:"upstream"`
-	Strategy string `mapstructure:"strategy"`
-	Remote   string `mapstructure:"remote"`
+	Upstream  string `mapstructure:"upstream"`
+	Strategy  string `mapstructure:"strategy"`
+	Remote    string `mapstructure:"remote"`
+	AutoStash *bool  `mapstructure:"auto_stash"` // Pointer to distinguish between unset and false
 }
 
 // PreFlight defines checks that run before scaffold execution.
@@ -374,7 +375,7 @@ func SaveProject(path string, config *Config) error {
 	}
 
 	// Update sync config if any values are set
-	if config.Sync.Upstream != "" || config.Sync.Strategy != "" || config.Sync.Remote != "" {
+	if config.Sync.Upstream != "" || config.Sync.Strategy != "" || config.Sync.Remote != "" || config.Sync.AutoStash != nil {
 		syncValues := make(map[string]interface{})
 		if config.Sync.Upstream != "" {
 			syncValues["upstream"] = config.Sync.Upstream
@@ -385,7 +386,10 @@ func SaveProject(path string, config *Config) error {
 		if config.Sync.Remote != "" {
 			syncValues["remote"] = config.Sync.Remote
 		}
-		setNestedValue("sync", syncValues, []string{"upstream", "strategy", "remote"})
+		if config.Sync.AutoStash != nil {
+			syncValues["auto_stash"] = *config.Sync.AutoStash
+		}
+		setNestedValue("sync", syncValues, []string{"upstream", "strategy", "remote", "auto_stash"})
 	}
 
 	content, err := yaml.Marshal(doc)

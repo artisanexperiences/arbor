@@ -17,8 +17,13 @@ var syncCmd = &cobra.Command{
 fetching the latest changes and rebasing or merging.
 
 The command will:
-1. Fetch updates from the remote
-2. Rebase (default) or merge the current branch with upstream changes
+1. Auto-stash all changes (tracked, untracked, and ignored files) by default
+2. Fetch updates from the remote
+3. Rebase (default) or merge the current branch with upstream changes
+4. Restore stashed changes after successful sync
+
+Auto-stashing can be disabled with --no-auto-stash flag or by setting
+sync.auto_stash: false in arbor.yaml.
 
 Configuration can be set via flags, project config (arbor.yaml), or interactively.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -40,6 +45,7 @@ Configuration can be set via flags, project config (arbor.yaml), or interactivel
 		remoteFlag := mustGetString(cmd, "remote")
 		saveFlag := mustGetBool(cmd, "save")
 		yesFlag := mustGetBool(cmd, "yes")
+		noAutoStashFlag := mustGetBool(cmd, "no-auto-stash")
 
 		// Get current branch
 		currentBranch, err := git.GetCurrentBranch(pc.CWD)
@@ -64,17 +70,48 @@ Configuration can be set via flags, project config (arbor.yaml), or interactivel
 			return fmt.Errorf("merge in progress - resolve conflicts, stage changes, and commit, or run 'git merge --abort' to cancel")
 		}
 
-		// Check for dirty worktree
-		isDirty, err := git.IsWorktreeDirty(pc.CWD)
-		if err != nil {
-			return fmt.Errorf("checking worktree status: %w", err)
+		// Determine if auto-stash should be used
+		// Priority: CLI flag > config > default (true)
+		autoStash := true
+		if noAutoStashFlag {
+			autoStash = false
+		} else if pc.Config.Sync.AutoStash != nil {
+			autoStash = *pc.Config.Sync.AutoStash
 		}
-		if isDirty {
+
+		// Check for any changes (tracked, untracked, ignored)
+		hasChanges, err := git.HasChanges(pc.CWD)
+		if err != nil {
+			return fmt.Errorf("checking for changes: %w", err)
+		}
+
+		// Track whether we created a stash so we can pop it later
+		var stashCreated bool
+
+		if hasChanges && autoStash {
 			if !quiet {
-				ui.PrintInfo("Warning: worktree has uncommitted changes")
+				ui.PrintInfo("Auto-stashing all changes (tracked, untracked, and ignored files)...")
+			}
+
+			if !dryRun {
+				if err := git.StashAll(pc.CWD, "arbor sync auto-stash"); err != nil {
+					return fmt.Errorf("failed to stash changes: %w", err)
+				}
+				stashCreated = true
+				if !quiet {
+					ui.PrintSuccess("Changes stashed successfully")
+				}
+			} else {
+				ui.PrintInfo("[DRY RUN] Would stash all changes")
+			}
+		} else if hasChanges && !autoStash {
+			// Auto-stash disabled but there are changes - warn the user
+			if !quiet {
+				ui.PrintWarning("Warning: worktree has changes (auto-stash is disabled)")
+				ui.PrintInfo("Untracked files that conflict with upstream may be lost")
 			}
 			if !yesFlag && ui.IsInteractive() {
-				confirmed, err := ui.Confirm("Continue with uncommitted changes?")
+				confirmed, err := ui.Confirm("Continue without stashing changes?")
 				if err != nil {
 					return err
 				}
@@ -204,11 +241,43 @@ Configuration can be set via flags, project config (arbor.yaml), or interactivel
 		}
 
 		if syncErr != nil {
+			// Leave stash intact on sync failure
+			if stashCreated && !quiet {
+				ui.PrintInfo("\nYour changes are preserved in the stash.")
+				ui.PrintInfo("After fixing the issue, run 'git stash pop' to restore them.")
+			}
 			return syncErr
 		}
 
 		if !quiet {
 			ui.PrintSuccess(fmt.Sprintf("Successfully synced with %s/%s using %s", remote, upstream, strategy))
+		}
+
+		// Pop the stash after successful sync
+		if stashCreated && !dryRun {
+			if verbose && !quiet {
+				ui.PrintInfo("Restoring stashed changes...")
+			}
+
+			popErr := git.PopStash(pc.CWD)
+			if popErr != nil {
+				// Check if it's a conflict error
+				if _, isConflict := popErr.(*git.StashConflictError); isConflict {
+					ui.PrintWarning("\nWarning: Could not automatically restore stashed changes due to conflicts")
+					ui.PrintInfo("\nYour changes have been safely preserved in the stash.")
+					ui.PrintInfo("To restore them, resolve conflicts and run:")
+					ui.PrintInfo("  git stash pop")
+					ui.PrintInfo("\nTo discard the stash:")
+					ui.PrintInfo("  git stash drop")
+				} else {
+					ui.PrintWarning(fmt.Sprintf("\nWarning: Failed to restore stashed changes: %v", popErr))
+					ui.PrintInfo("Your changes are still in the stash. Run 'git stash pop' to restore them manually.")
+				}
+			} else {
+				if !quiet {
+					ui.PrintSuccess("Stashed changes restored successfully")
+				}
+			}
 		}
 
 		// Save config if requested
@@ -250,4 +319,5 @@ func init() {
 	syncCmd.Flags().StringP("remote", "r", "", "Remote name to fetch from (default: origin)")
 	syncCmd.Flags().Bool("save", false, "Persist sync settings to arbor.yaml")
 	syncCmd.Flags().BoolP("yes", "y", false, "Skip confirmations and run with chosen values")
+	syncCmd.Flags().Bool("no-auto-stash", false, "Disable automatic stashing of all changes before sync")
 }
