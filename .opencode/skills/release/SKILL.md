@@ -1,3 +1,13 @@
+---
+name: release
+description: Prepare and publish releases with version analysis, documentation updates, and quality checks
+license: MIT
+compatibility: opencode
+metadata:
+  audience: maintainers
+  workflow: github
+---
+
 # Release Management Skill
 
 ## Overview
