@@ -124,12 +124,13 @@ Synchronizes the current worktree branch with an upstream branch by fetching the
 
 **Auto-Stashing (Default):**
 
-By default, `arbor sync` automatically stashes **all** changes before syncing, including:
+By default, `arbor sync` automatically stashes changes before syncing, including:
 - Tracked modifications
 - Untracked files
-- Ignored files (like `.env`, `.env.testing`)
 
-This ensures your local changes are preserved even if they conflict with files in the upstream branch. After a successful sync, the stashed changes are automatically restored.
+**Note:** Ignored files (like `node_modules`, `vendor`, `.env`) are **not** stashed for performance reasons. This is safe because git does not modify ignored files during rebase/merge operations, and skipping them makes sync much faster on large projects.
+
+After a successful sync, the stashed changes are automatically restored.
 
 ```bash
 # Sync with default settings (upstream: main, strategy: rebase, auto-stash: on)

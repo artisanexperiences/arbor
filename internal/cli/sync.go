@@ -17,10 +17,13 @@ var syncCmd = &cobra.Command{
 fetching the latest changes and rebasing or merging.
 
 The command will:
-1. Auto-stash all changes (tracked, untracked, and ignored files) by default
+1. Auto-stash changes (tracked modifications and untracked files) by default
 2. Fetch updates from the remote
 3. Rebase (default) or merge the current branch with upstream changes
 4. Restore stashed changes after successful sync
+
+Note: Ignored files (node_modules, vendor, etc.) are not stashed for performance,
+as they are not modified by git during sync anyway.
 
 Auto-stashing can be disabled with --no-auto-stash flag or by setting
 sync.auto_stash: false in arbor.yaml.
@@ -191,7 +194,7 @@ Configuration can be set via flags, project config (arbor.yaml), or interactivel
 
 		if hasChanges && autoStash {
 			if !quiet {
-				ui.PrintInfo("Auto-stashing all changes (tracked, untracked, and ignored files)...")
+				ui.PrintInfo("Auto-stashing changes (tracked modifications and untracked files)...")
 			}
 
 			if !dryRun {
@@ -203,7 +206,7 @@ Configuration can be set via flags, project config (arbor.yaml), or interactivel
 					ui.PrintSuccess("Changes stashed successfully")
 				}
 			} else {
-				ui.PrintInfo("[DRY RUN] Would stash all changes")
+				ui.PrintInfo("[DRY RUN] Would stash tracked and untracked changes")
 			}
 		}
 

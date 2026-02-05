@@ -69,7 +69,7 @@ func TestStashAll(t *testing.T) {
 			expectStash: true,
 		},
 		{
-			name: "stash ignored files",
+			name: "ignored files are not stashed",
 			setup: func(repoPath string) {
 				// Create .gitignore
 				gitignorePath := filepath.Join(repoPath, ".gitignore")
@@ -77,12 +77,12 @@ func TestStashAll(t *testing.T) {
 				exec.Command("git", "-C", repoPath, "add", ".gitignore").Run()
 				exec.Command("git", "-C", repoPath, "commit", "-m", "Add gitignore").Run()
 
-				// Create ignored file
+				// Create ignored file - this should NOT be stashed
 				ignoredPath := filepath.Join(repoPath, ".env")
 				os.WriteFile(ignoredPath, []byte("SECRET=123"), 0644)
 			},
 			wantErr:     false,
-			expectStash: true,
+			expectStash: false, // No stash created because ignored files are skipped
 		},
 		{
 			name: "no changes to stash",
@@ -93,17 +93,17 @@ func TestStashAll(t *testing.T) {
 			expectStash: false, // No stash created when there's nothing to stash
 		},
 		{
-			name: "stash mixed changes",
+			name: "stash mixed changes (tracked and untracked only)",
 			setup: func(repoPath string) {
-				// Tracked modification
+				// Tracked modification - WILL be stashed
 				readmePath := filepath.Join(repoPath, "README.md")
 				os.WriteFile(readmePath, []byte("# Modified\n"), 0644)
 
-				// Untracked file
+				// Untracked file - WILL be stashed
 				untrackedPath := filepath.Join(repoPath, "untracked.txt")
 				os.WriteFile(untrackedPath, []byte("untracked"), 0644)
 
-				// Ignored file
+				// Ignored file - will NOT be stashed
 				gitignorePath := filepath.Join(repoPath, ".gitignore")
 				os.WriteFile(gitignorePath, []byte("*.env\n"), 0644)
 				exec.Command("git", "-C", repoPath, "add", ".gitignore").Run()
@@ -113,7 +113,7 @@ func TestStashAll(t *testing.T) {
 				os.WriteFile(ignoredPath, []byte("SECRET=123"), 0644)
 			},
 			wantErr:     false,
-			expectStash: true,
+			expectStash: true, // Stash created for tracked and untracked
 		},
 	}
 
@@ -145,11 +145,12 @@ func TestStashAll(t *testing.T) {
 			}
 
 			// Verify working tree is clean after stash (if stash was created)
+			// Note: We only check for tracked/untracked files, not ignored files
 			if tt.expectStash {
-				cmd := exec.Command("git", "-C", repoPath, "status", "--porcelain", "--ignored")
+				cmd := exec.Command("git", "-C", repoPath, "status", "--porcelain")
 				output, _ := cmd.Output()
 				if len(output) > 0 {
-					t.Errorf("Working tree not clean after stash: %s", string(output))
+					t.Errorf("Working tree not clean after stash (tracked/untracked): %s", string(output))
 				}
 			}
 		})
@@ -319,7 +320,7 @@ func TestHasChanges(t *testing.T) {
 			wantErr:     false,
 		},
 		{
-			name: "ignored files",
+			name: "ignored files are not detected as changes",
 			setup: func(repoPath string) {
 				// Create .gitignore
 				gitignorePath := filepath.Join(repoPath, ".gitignore")
@@ -327,11 +328,11 @@ func TestHasChanges(t *testing.T) {
 				exec.Command("git", "-C", repoPath, "add", ".gitignore").Run()
 				exec.Command("git", "-C", repoPath, "commit", "-m", "Add gitignore").Run()
 
-				// Create ignored file
+				// Create ignored file - this should NOT be detected as a change
 				ignoredPath := filepath.Join(repoPath, ".env")
 				os.WriteFile(ignoredPath, []byte("SECRET=123"), 0644)
 			},
-			wantChanges: true,
+			wantChanges: false, // Ignored files are skipped
 			wantErr:     false,
 		},
 		{

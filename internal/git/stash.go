@@ -6,10 +6,11 @@ import (
 	"strings"
 )
 
-// StashAll creates a stash including untracked and ignored files
-// This captures tracked modifications, untracked files, and ignored files
+// StashAll creates a stash including tracked modifications and untracked files
+// This captures tracked modifications and untracked files, but skips ignored files
+// for better performance (ignored files like node_modules, vendor are not touched by git during sync anyway)
 func StashAll(worktreePath string, message string) error {
-	cmd := exec.Command("git", "-C", worktreePath, "stash", "push", "--include-untracked", "--all", "-m", message)
+	cmd := exec.Command("git", "-C", worktreePath, "stash", "push", "--include-untracked", "-m", message)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		outputStr := string(output)
@@ -49,11 +50,11 @@ func HasStash(worktreePath string) (bool, error) {
 }
 
 // HasChanges checks if there are any changes that would be captured by stash
-// This includes tracked modifications, untracked files, and ignored files
+// This includes tracked modifications and untracked files (but not ignored files)
 func HasChanges(worktreePath string) (bool, error) {
-	// Check for any files in working tree (tracked, untracked, ignored)
-	// Using --ignored to also check ignored files
-	cmd := exec.Command("git", "-C", worktreePath, "status", "--porcelain", "--ignored")
+	// Check for tracked modifications and untracked files
+	// Note: --ignored is NOT used, so we skip ignored files for performance
+	cmd := exec.Command("git", "-C", worktreePath, "status", "--porcelain")
 	output, err := cmd.Output()
 	if err != nil {
 		return false, fmt.Errorf("checking for changes: %w", err)
