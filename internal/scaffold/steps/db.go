@@ -397,6 +397,7 @@ type DbDestroyStep struct {
 	args          []string
 	dbType        string
 	clientFactory DatabaseClientFactory
+	prompter      prompts.DbPrompter
 }
 
 func NewDbDestroyStep(cfg config.StepConfig) *DbDestroyStep {
@@ -405,6 +406,7 @@ func NewDbDestroyStep(cfg config.StepConfig) *DbDestroyStep {
 		args:          cfg.Args,
 		dbType:        cfg.Type,
 		clientFactory: DefaultDatabaseClientFactory,
+		prompter:      ui.UIDbPrompter{},
 	}
 }
 
@@ -414,6 +416,17 @@ func NewDbDestroyStepWithFactory(cfg config.StepConfig, factory DatabaseClientFa
 		args:          cfg.Args,
 		dbType:        cfg.Type,
 		clientFactory: factory,
+		prompter:      ui.UIDbPrompter{},
+	}
+}
+
+func NewDbDestroyStepWithPrompter(cfg config.StepConfig, factory DatabaseClientFactory, prompter prompts.DbPrompter) *DbDestroyStep {
+	return &DbDestroyStep{
+		name:          "db.destroy",
+		args:          cfg.Args,
+		dbType:        cfg.Type,
+		clientFactory: factory,
+		prompter:      prompter,
 	}
 }
 
@@ -552,6 +565,20 @@ func (s *DbDestroyStep) destroyDatabases(engine, suffix string, opts types.StepO
 			fmt.Printf("  No databases matching pattern found.\n")
 		}
 		return nil
+	}
+
+	// Prompt for confirmation in interactive mode
+	if opts.PromptMode.Allow() {
+		confirmed, err := s.prompter.ConfirmDatabaseDrop(suffix, databases)
+		if err != nil {
+			return fmt.Errorf("database drop confirmation prompt: %w", err)
+		}
+		if !confirmed {
+			if opts.Verbose {
+				fmt.Printf("  Database cleanup cancelled by user.\n")
+			}
+			return nil
+		}
 	}
 
 	for _, dbName := range databases {
