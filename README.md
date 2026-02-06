@@ -465,6 +465,20 @@ All steps support template variables that are replaced at runtime:
 - Retries up to 5 times on collision
 - Persists suffix to `.arbor.local` for cleanup
 
+**Interactive Features (MySQL/PostgreSQL):**
+
+In interactive mode, `db.create` offers database reuse and migration control:
+
+- **Database Reuse**: When other worktrees exist with databases, you can choose to reuse an existing database instead of creating a new one. This is useful for stacked PRs or related feature branches that share the same data.
+  - The suffix from the selected worktree is copied to your current worktree
+  - Both worktrees point to the same database
+  - Non-interactive mode (CI, `--no-interactive`, `--force`) always creates new databases
+
+- **Migration Prompt**: After database creation/selection, you'll be asked whether to run `migrate:fresh --seed`:
+  - Confirm: Migrations run as part of the scaffold
+  - Decline: The migration step is skipped
+  - Non-interactive mode always runs migrations
+
 **Multiple databases with shared suffix:**
 
 ```yaml
@@ -489,6 +503,16 @@ Result: Creates `app_cool_engine`, `quotes_cool_engine`, `knowledge_cool_engine`
 
 - Drops all databases matching the suffix pattern
 - Runs automatically during `arbor remove`
+
+**Interactive Cleanup Confirmation:**
+
+In interactive mode, before dropping databases, you'll be shown a list of databases that will be affected and asked to confirm:
+
+- Confirm: All databases matching the suffix are dropped
+- Decline: Cleanup is skipped (databases are preserved)
+- Non-interactive mode (CI, `--no-interactive`, `--force`) drops databases without asking
+
+This prevents accidental destruction of shared databases when working with stacked PRs.
 
 #### Environment Steps
 
