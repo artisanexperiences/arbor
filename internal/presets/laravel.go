@@ -25,7 +25,17 @@ func NewLaravel() *Laravel {
 				{Name: "db.create", Condition: map[string]interface{}{"env_file_contains": map[string]interface{}{"file": ".env", "key": "DB_CONNECTION"}}},
 				{Name: "env.write", Key: "DB_DATABASE", Value: "{{ .SanitizedSiteName }}_{{ .DbSuffix }}", Condition: map[string]interface{}{"env_file_contains": map[string]interface{}{"file": ".env", "key": "DB_CONNECTION"}}},
 				{Name: "node.npm", Args: []string{"ci"}, Condition: map[string]interface{}{"file_exists": "package-lock.json"}},
-				{Name: "php.laravel", Args: []string{"migrate:fresh", "--seed", "--no-interaction"}},
+				{
+					Name: "php.laravel", Args: []string{"migrate:fresh", "--seed", "--no-interaction"},
+					Condition: map[string]interface{}{
+						"not": map[string]interface{}{
+							"context_var": map[string]interface{}{
+								"key":   "skip_migrations",
+								"value": "true",
+							},
+						},
+					},
+				},
 				{Name: "node.npm", Args: []string{"run", "build"}, Condition: map[string]interface{}{"file_exists": "package-lock.json"}},
 				{Name: "php.laravel", Args: []string{"storage:link", "--no-interaction"}},
 				{Name: "herd", Args: []string{"link", "--secure", "{{ .SiteName }}"}},
