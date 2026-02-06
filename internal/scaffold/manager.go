@@ -183,8 +183,8 @@ func (m *ScaffoldManager) stepsFromConfig(stepConfigs []config.StepConfig) ([]ty
 	return stepsList, nil
 }
 
-func (m *ScaffoldManager) RunScaffold(worktreePath, branch, repoName, siteName, preset string, cfg *config.Config, dryRun, verbose, quiet bool) error {
-	ctx := m.newScaffoldContext(worktreePath, branch, repoName, siteName, preset)
+func (m *ScaffoldManager) RunScaffold(worktreePath, branch, repoName, siteName, preset string, cfg *config.Config, barePath string, promptMode types.PromptMode, dryRun, verbose, quiet bool) error {
+	ctx := m.newScaffoldContext(worktreePath, branch, repoName, siteName, preset, barePath)
 
 	// Run pre-flight checks with spinner
 	if !quiet {
@@ -228,7 +228,7 @@ func (m *ScaffoldManager) RunScaffold(worktreePath, branch, repoName, siteName, 
 		return fmt.Errorf("getting scaffold steps: %w", err)
 	}
 
-	opts := m.stepOptionsFromFlags(dryRun, verbose, quiet)
+	opts := m.stepOptionsFromFlags(dryRun, verbose, quiet, promptMode)
 
 	executor := NewStepExecutor(stepsList, &ctx, opts)
 	if err := executor.Execute(); err != nil {
@@ -238,15 +238,15 @@ func (m *ScaffoldManager) RunScaffold(worktreePath, branch, repoName, siteName, 
 	return nil
 }
 
-func (m *ScaffoldManager) RunCleanup(worktreePath, branch, repoName, siteName, preset string, cfg *config.Config, dryRun, verbose, quiet bool) error {
-	ctx := m.newScaffoldContext(worktreePath, branch, repoName, siteName, preset)
+func (m *ScaffoldManager) RunCleanup(worktreePath, branch, repoName, siteName, preset string, cfg *config.Config, barePath string, promptMode types.PromptMode, dryRun, verbose, quiet bool) error {
+	ctx := m.newScaffoldContext(worktreePath, branch, repoName, siteName, preset, barePath)
 
 	stepsList, err := m.GetCleanupSteps(cfg, worktreePath, branch)
 	if err != nil {
 		return fmt.Errorf("getting cleanup steps: %w", err)
 	}
 
-	opts := m.stepOptionsFromFlags(dryRun, verbose, quiet)
+	opts := m.stepOptionsFromFlags(dryRun, verbose, quiet, promptMode)
 
 	executor := NewStepExecutor(stepsList, &ctx, opts)
 	if err := executor.Execute(); err != nil {
@@ -256,7 +256,7 @@ func (m *ScaffoldManager) RunCleanup(worktreePath, branch, repoName, siteName, p
 	return nil
 }
 
-func (m *ScaffoldManager) newScaffoldContext(worktreePath, branch, repoName, siteName, preset string) types.ScaffoldContext {
+func (m *ScaffoldManager) newScaffoldContext(worktreePath, branch, repoName, siteName, preset, barePath string) types.ScaffoldContext {
 	path := filepath.Base(worktreePath)
 	repoPath := filepath.Base(filepath.Dir(worktreePath))
 	return types.ScaffoldContext{
@@ -268,15 +268,17 @@ func (m *ScaffoldManager) newScaffoldContext(worktreePath, branch, repoName, sit
 		Env:          make(map[string]string),
 		Path:         path,
 		RepoPath:     repoPath,
+		BarePath:     barePath,
 		Vars:         make(map[string]string),
 	}
 }
 
-func (m *ScaffoldManager) stepOptionsFromFlags(dryRun, verbose, quiet bool) types.StepOptions {
+func (m *ScaffoldManager) stepOptionsFromFlags(dryRun, verbose, quiet bool, promptMode types.PromptMode) types.StepOptions {
 	return types.StepOptions{
-		DryRun:  dryRun,
-		Verbose: verbose,
-		Quiet:   quiet,
+		DryRun:     dryRun,
+		Verbose:    verbose,
+		Quiet:      quiet,
+		PromptMode: promptMode,
 	}
 }
 

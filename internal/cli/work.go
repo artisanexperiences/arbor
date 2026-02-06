@@ -2,12 +2,14 @@ package cli
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
 
 	"github.com/artisanexperiences/arbor/internal/git"
+	"github.com/artisanexperiences/arbor/internal/scaffold/types"
 	"github.com/artisanexperiences/arbor/internal/ui"
 	"github.com/artisanexperiences/arbor/internal/utils"
 )
@@ -131,7 +133,13 @@ available branches or entering a new branch name.`,
 				siteName = pc.Config.SiteName
 			}
 
-			if err := pc.ScaffoldManager().RunScaffold(absWorktreePath, branch, repoName, siteName, preset, pc.Config, false, verbose, quiet); err != nil {
+			promptMode := types.PromptMode{
+				Interactive:   ui.IsInteractive(),
+				NoInteractive: false,
+				Force:         false,
+				CI:            os.Getenv("CI") != "",
+			}
+			if err := pc.ScaffoldManager().RunScaffold(absWorktreePath, branch, repoName, siteName, preset, pc.Config, pc.BarePath, promptMode, false, verbose, quiet); err != nil {
 				ui.PrintErrorWithHint("Scaffold steps failed", err.Error())
 			}
 

@@ -2,11 +2,13 @@ package cli
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
 
 	"github.com/artisanexperiences/arbor/internal/git"
+	"github.com/artisanexperiences/arbor/internal/scaffold/types"
 	"github.com/artisanexperiences/arbor/internal/ui"
 )
 
@@ -136,7 +138,13 @@ a worktree to scaffold.`,
 			siteName = pc.Config.SiteName
 		}
 
-		if err := pc.ScaffoldManager().RunScaffold(selectedWorktree.Path, selectedWorktree.Branch, repoName, siteName, preset, pc.Config, dryRun, verbose, quiet); err != nil {
+		promptMode := types.PromptMode{
+			Interactive:   ui.IsInteractive(),
+			NoInteractive: false,
+			Force:         false,
+			CI:            os.Getenv("CI") != "",
+		}
+		if err := pc.ScaffoldManager().RunScaffold(selectedWorktree.Path, selectedWorktree.Branch, repoName, siteName, preset, pc.Config, pc.BarePath, promptMode, dryRun, verbose, quiet); err != nil {
 			ui.PrintErrorWithHint("Scaffold steps failed", err.Error())
 			return err
 		}

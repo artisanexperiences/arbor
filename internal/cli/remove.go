@@ -9,6 +9,7 @@ import (
 
 	arborerrors "github.com/artisanexperiences/arbor/internal/errors"
 	"github.com/artisanexperiences/arbor/internal/git"
+	"github.com/artisanexperiences/arbor/internal/scaffold/types"
 	"github.com/artisanexperiences/arbor/internal/ui"
 )
 
@@ -119,7 +120,13 @@ Cleanup steps may include:
 
 			if preset != "" {
 				siteName := filepath.Base(targetWorktree.Path)
-				if err := pc.ScaffoldManager().RunCleanup(targetWorktree.Path, targetWorktree.Branch, "", siteName, preset, pc.Config, false, verbose, quiet); err != nil {
+				promptMode := types.PromptMode{
+					Interactive:   ui.IsInteractive(),
+					NoInteractive: false,
+					Force:         force,
+					CI:            os.Getenv("CI") != "",
+				}
+				if err := pc.ScaffoldManager().RunCleanup(targetWorktree.Path, targetWorktree.Branch, "", siteName, preset, pc.Config, pc.BarePath, promptMode, false, verbose, quiet); err != nil {
 					ui.PrintErrorWithHint("Cleanup failed", err.Error())
 				}
 			}

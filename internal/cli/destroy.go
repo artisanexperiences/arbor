@@ -14,6 +14,7 @@ import (
 	"github.com/artisanexperiences/arbor/internal/presets"
 	"github.com/artisanexperiences/arbor/internal/scaffold"
 	"github.com/artisanexperiences/arbor/internal/scaffold/steps"
+	"github.com/artisanexperiences/arbor/internal/scaffold/types"
 	"github.com/artisanexperiences/arbor/internal/ui"
 )
 
@@ -113,6 +114,12 @@ This operation cannot be undone.`,
 
 		allCleanupFailed := true
 		repoName := filepath.Base(absProjectPath)
+		promptMode := types.PromptMode{
+			Interactive:   ui.IsInteractive(),
+			NoInteractive: false,
+			Force:         force,
+			CI:            os.Getenv("CI") != "",
+		}
 		for _, wt := range worktrees {
 			ui.PrintStep("Removing worktree: " + wt.Branch)
 
@@ -126,7 +133,7 @@ This operation cannot be undone.`,
 				if wt.Branch == cfg.DefaultBranch && cfg.SiteName != "" {
 					siteName = cfg.SiteName
 				}
-				if err := scaffoldManager.RunCleanup(wt.Path, wt.Branch, repoName, siteName, wtPreset, cfg, false, verbose, quiet); err != nil {
+				if err := scaffoldManager.RunCleanup(wt.Path, wt.Branch, repoName, siteName, wtPreset, cfg, barePath, promptMode, false, verbose, quiet); err != nil {
 					ui.PrintWarning(fmt.Sprintf("Cleanup failed for %s: %v", wt.Branch, err))
 				} else {
 					allCleanupFailed = false

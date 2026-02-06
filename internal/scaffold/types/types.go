@@ -23,16 +23,32 @@ type ScaffoldContext struct {
 	Env          map[string]string
 	Path         string
 	RepoPath     string
+	BarePath     string
 	DbSuffix     string
 	Vars         map[string]string
 	mu           sync.RWMutex
 }
 
+type PromptMode struct {
+	Interactive   bool // terminal attached
+	NoInteractive bool
+	Force         bool
+	CI            bool
+}
+
+func (p PromptMode) Allow() bool {
+	if p.NoInteractive || p.Force || p.CI {
+		return false
+	}
+	return p.Interactive
+}
+
 type StepOptions struct {
-	Args    []string
-	DryRun  bool
-	Verbose bool
-	Quiet   bool
+	Args       []string
+	DryRun     bool
+	Verbose    bool
+	Quiet      bool
+	PromptMode PromptMode
 }
 
 type ScaffoldStep interface {

@@ -12,6 +12,7 @@ import (
 	"github.com/artisanexperiences/arbor/internal/git"
 	"github.com/artisanexperiences/arbor/internal/presets"
 	"github.com/artisanexperiences/arbor/internal/scaffold"
+	"github.com/artisanexperiences/arbor/internal/scaffold/types"
 	"github.com/artisanexperiences/arbor/internal/ui"
 	"github.com/artisanexperiences/arbor/internal/utils"
 )
@@ -145,7 +146,13 @@ Arguments:
 		}
 
 		if !skipScaffold {
-			if err := scaffoldManager.RunScaffold(mainPath, defaultBranch, repoName, cfg.SiteName, cfg.Preset, cfg, false, verbose, quiet); err != nil {
+			promptMode := types.PromptMode{
+				Interactive:   ui.IsInteractive(),
+				NoInteractive: false,
+				Force:         false,
+				CI:            os.Getenv("CI") != "",
+			}
+			if err := scaffoldManager.RunScaffold(mainPath, defaultBranch, repoName, cfg.SiteName, cfg.Preset, cfg, barePath, promptMode, false, verbose, quiet); err != nil {
 				ui.PrintErrorWithHint("Scaffold steps failed", err.Error())
 			}
 		} else {
