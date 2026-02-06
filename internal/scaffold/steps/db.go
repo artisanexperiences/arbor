@@ -8,8 +8,10 @@ import (
 
 	"github.com/artisanexperiences/arbor/internal/config"
 	"github.com/artisanexperiences/arbor/internal/git"
+	"github.com/artisanexperiences/arbor/internal/scaffold/prompts"
 	"github.com/artisanexperiences/arbor/internal/scaffold/types"
 	"github.com/artisanexperiences/arbor/internal/scaffold/words"
+	"github.com/artisanexperiences/arbor/internal/ui"
 	"github.com/artisanexperiences/arbor/internal/utils"
 )
 
@@ -25,6 +27,7 @@ type DbCreateStep struct {
 	args          []string
 	dbType        string
 	clientFactory DatabaseClientFactory
+	prompter      prompts.DbPrompter
 }
 
 func NewDbCreateStep(cfg config.StepConfig) *DbCreateStep {
@@ -33,6 +36,7 @@ func NewDbCreateStep(cfg config.StepConfig) *DbCreateStep {
 		args:          cfg.Args,
 		dbType:        cfg.Type,
 		clientFactory: DefaultDatabaseClientFactory,
+		prompter:      ui.UIDbPrompter{},
 	}
 }
 
@@ -42,6 +46,17 @@ func NewDbCreateStepWithFactory(cfg config.StepConfig, factory DatabaseClientFac
 		args:          cfg.Args,
 		dbType:        cfg.Type,
 		clientFactory: factory,
+		prompter:      ui.UIDbPrompter{},
+	}
+}
+
+func NewDbCreateStepWithPrompter(cfg config.StepConfig, factory DatabaseClientFactory, prompter prompts.DbPrompter) *DbCreateStep {
+	return &DbCreateStep{
+		name:          "db.create",
+		args:          cfg.Args,
+		dbType:        cfg.Type,
+		clientFactory: factory,
+		prompter:      prompter,
 	}
 }
 
@@ -83,7 +98,34 @@ func (s *DbCreateStep) Run(ctx *types.ScaffoldContext, opts types.StepOptions) e
 		return s.createSqlite(ctx, dbName, opts)
 	}
 
-	return s.createWithRetry(ctx, engine, opts)
+	// Handle database selection prompting for mysql/pgsql
+	if err := s.handleDatabaseSelection(ctx, opts); err != nil {
+		return err
+	}
+
+	// If user chose existing database, skip creation
+	if ctx.GetVar("use_existing_db") == "true" {
+		if opts.Verbose {
+			fmt.Printf("  Using existing database with suffix: %s\n", ctx.GetDbSuffix())
+		}
+		// Still prompt for migrations even when reusing
+		if err := s.handleMigrationPrompt(ctx, opts); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// Create new database
+	if err := s.createWithRetry(ctx, engine, opts); err != nil {
+		return err
+	}
+
+	// Prompt for migrations after database creation
+	if err := s.handleMigrationPrompt(ctx, opts); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *DbCreateStep) detectEngine(ctx *types.ScaffoldContext) (string, error) {
@@ -226,6 +268,97 @@ func (s *DbCreateStep) persistDbSuffix(ctx *types.ScaffoldContext) error {
 
 	// Write to .arbor.local instead of arbor.yaml
 	return config.WriteLocalState(ctx.WorktreePath, config.LocalState{DbSuffix: suffix})
+}
+
+// handleDatabaseSelection prompts the user to choose between creating a new database
+// or reusing an existing one from another worktree.
+func (s *DbCreateStep) handleDatabaseSelection(ctx *types.ScaffoldContext, opts types.StepOptions) error {
+	// Only prompt if prompts are allowed and we haven't already done selection
+	if !opts.PromptMode.Allow() || ctx.GetVar("db_selection_done") == "true" {
+		return nil
+	}
+
+	// Mark selection as done to prevent multiple prompts
+	ctx.SetVar("db_selection_done", "true")
+
+	// Only offer reuse for mysql/pgsql, and only if we have a bare path
+	if ctx.BarePath == "" {
+		return nil
+	}
+
+	// Discover databases from other worktrees
+	databases, err := discoverWorktreeDatabases(ctx.BarePath, ctx.WorktreePath)
+	if err != nil {
+		// Log error but don't fail - just skip discovery
+		if opts.Verbose {
+			fmt.Printf("  Could not discover other databases: %v\n", err)
+		}
+		return nil
+	}
+
+	if len(databases) == 0 {
+		// No other databases to reuse
+		return nil
+	}
+
+	// Build options for the prompt
+	options := []prompts.DatabaseOption{
+		{
+			Label:    "Create new database",
+			DbSuffix: "", // Empty suffix indicates new database
+		},
+	}
+
+	for _, db := range databases {
+		options = append(options, prompts.DatabaseOption{
+			Label:    fmt.Sprintf("Use database from '%s' (%s)", db.Branch, db.DbSuffix),
+			DbSuffix: db.DbSuffix,
+		})
+	}
+
+	// Prompt user to select
+	selectedSuffix, err := s.prompter.SelectDatabase(options)
+	if err != nil {
+		return fmt.Errorf("database selection prompt: %w", err)
+	}
+
+	// If user chose to create new database, continue with normal flow
+	if selectedSuffix == "" {
+		return nil
+	}
+
+	// User chose to reuse existing database
+	ctx.SetDbSuffix(selectedSuffix)
+	ctx.SetVar("use_existing_db", "true")
+
+	// Persist the suffix to .arbor.local
+	if err := s.persistDbSuffix(ctx); err != nil {
+		if opts.Verbose {
+			fmt.Printf("  warning: failed to persist db_suffix: %v\n", err)
+		}
+	}
+
+	return nil
+}
+
+// handleMigrationPrompt asks the user if they want to run migrations.
+func (s *DbCreateStep) handleMigrationPrompt(ctx *types.ScaffoldContext, opts types.StepOptions) error {
+	// Only prompt if prompts are allowed
+	if !opts.PromptMode.Allow() {
+		return nil
+	}
+
+	confirmed, err := s.prompter.ConfirmMigrations()
+	if err != nil {
+		return fmt.Errorf("migration confirmation prompt: %w", err)
+	}
+
+	// If user declined, set context variable to skip migrations
+	if !confirmed {
+		ctx.SetVar("skip_migrations", "true")
+	}
+
+	return nil
 }
 
 func (s *DbCreateStep) createSqlite(ctx *types.ScaffoldContext, dbName string, opts types.StepOptions) error {
