@@ -4,12 +4,21 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/artisanexperiences/arbor/internal/config"
+	"github.com/artisanexperiences/arbor/internal/git"
 	"github.com/artisanexperiences/arbor/internal/scaffold/types"
 	"github.com/artisanexperiences/arbor/internal/scaffold/words"
 	"github.com/artisanexperiences/arbor/internal/utils"
 )
+
+// WorktreeDatabase represents a database suffix found in another worktree.
+type WorktreeDatabase struct {
+	WorktreePath string
+	Branch       string
+	DbSuffix     string
+}
 
 type DbCreateStep struct {
 	name          string
@@ -433,4 +442,49 @@ func (s *DbDestroyStep) destroyDatabases(engine, suffix string, opts types.StepO
 	}
 
 	return nil
+}
+
+// discoverWorktreeDatabases finds other worktrees that have a DbSuffix configured.
+// Excludes the current worktree from results and sorts by branch name for deterministic ordering.
+func discoverWorktreeDatabases(barePath, currentWorktreePath string) ([]WorktreeDatabase, error) {
+	if barePath == "" {
+		return nil, nil
+	}
+
+	// List all worktrees
+	worktrees, err := git.ListWorktrees(barePath)
+	if err != nil {
+		return nil, fmt.Errorf("listing worktrees: %w", err)
+	}
+
+	var results []WorktreeDatabase
+	for _, wt := range worktrees {
+		// Skip the current worktree
+		if wt.Path == currentWorktreePath {
+			continue
+		}
+
+		// Try to read local state
+		localState, err := config.ReadLocalState(wt.Path)
+		if err != nil {
+			// Skip worktrees that don't have .arbor.local or can't be read
+			continue
+		}
+
+		// Only include worktrees that have a DbSuffix
+		if localState.DbSuffix != "" {
+			results = append(results, WorktreeDatabase{
+				WorktreePath: wt.Path,
+				Branch:       wt.Branch,
+				DbSuffix:     localState.DbSuffix,
+			})
+		}
+	}
+
+	// Sort by branch name for deterministic ordering
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Branch < results[j].Branch
+	})
+
+	return results, nil
 }
