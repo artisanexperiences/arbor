@@ -130,6 +130,8 @@ func (ctx *ScaffoldContext) evaluateSingle(key string, value interface{}) (bool,
 		return ctx.envFileContains(value)
 	case "env_file_missing":
 		return ctx.envFileMissing(value)
+	case "context_var":
+		return ctx.contextVarEquals(value)
 	case "not":
 		result, err := ctx.evaluateCondition(value)
 		if err != nil {
@@ -340,6 +342,23 @@ func (ctx *ScaffoldContext) envFileMissing(value interface{}) (bool, error) {
 		return false, err
 	}
 	return !contains, nil
+}
+
+func (ctx *ScaffoldContext) contextVarEquals(value interface{}) (bool, error) {
+	var cfg struct {
+		Key   string `mapstructure:"key"`
+		Value string `mapstructure:"value"`
+	}
+	switch v := value.(type) {
+	case map[string]interface{}:
+		if err := mapstructure.Decode(v, &cfg); err != nil {
+			return false, nil
+		}
+	}
+	if cfg.Key == "" {
+		return false, nil
+	}
+	return ctx.GetVar(cfg.Key) == cfg.Value, nil
 }
 
 func (ctx *ScaffoldContext) SetVar(key, value string) {

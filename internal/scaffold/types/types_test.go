@@ -762,3 +762,125 @@ func TestScaffoldContext_FileExists_Array(t *testing.T) {
 		}
 	})
 }
+
+func TestScaffoldContext_ContextVar(t *testing.T) {
+	tmpDir := t.TempDir()
+	ctx := &ScaffoldContext{
+		WorktreePath: tmpDir,
+		Vars:         make(map[string]string),
+	}
+
+	t.Run("context_var with matching key and value", func(t *testing.T) {
+		ctx.SetVar("skip_migrations", "true")
+
+		result, err := ctx.EvaluateCondition(map[string]interface{}{
+			"context_var": map[string]interface{}{
+				"key":   "skip_migrations",
+				"value": "true",
+			},
+		})
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if !result {
+			t.Error("expected true when context var matches")
+		}
+	})
+
+	t.Run("context_var with non-matching value", func(t *testing.T) {
+		ctx.SetVar("skip_migrations", "false")
+
+		result, err := ctx.EvaluateCondition(map[string]interface{}{
+			"context_var": map[string]interface{}{
+				"key":   "skip_migrations",
+				"value": "true",
+			},
+		})
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if result {
+			t.Error("expected false when context var value does not match")
+		}
+	})
+
+	t.Run("context_var with missing key", func(t *testing.T) {
+		result, err := ctx.EvaluateCondition(map[string]interface{}{
+			"context_var": map[string]interface{}{
+				"key":   "nonexistent_key",
+				"value": "true",
+			},
+		})
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if result {
+			t.Error("expected false when context var key does not exist")
+		}
+	})
+
+	t.Run("not + context_var combination (used by migration step)", func(t *testing.T) {
+		// Test the pattern used by the migration step:
+		// Run migrations UNLESS skip_migrations is "true"
+		ctx.SetVar("skip_migrations", "true")
+
+		result, err := ctx.EvaluateCondition(map[string]interface{}{
+			"not": map[string]interface{}{
+				"context_var": map[string]interface{}{
+					"key":   "skip_migrations",
+					"value": "true",
+				},
+			},
+		})
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if result {
+			t.Error("expected false when NOT(skip_migrations=true) and skip_migrations IS true")
+		}
+
+		// Now test when skip_migrations is not set or is false
+		ctx.SetVar("skip_migrations", "false")
+		result, err = ctx.EvaluateCondition(map[string]interface{}{
+			"not": map[string]interface{}{
+				"context_var": map[string]interface{}{
+					"key":   "skip_migrations",
+					"value": "true",
+				},
+			},
+		})
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if !result {
+			t.Error("expected true when NOT(skip_migrations=true) and skip_migrations is false")
+		}
+	})
+
+	t.Run("context_var with empty key returns false", func(t *testing.T) {
+		result, err := ctx.EvaluateCondition(map[string]interface{}{
+			"context_var": map[string]interface{}{
+				"key":   "",
+				"value": "true",
+			},
+		})
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if result {
+			t.Error("expected false when key is empty")
+		}
+	})
+
+	t.Run("context_var with invalid structure returns false", func(t *testing.T) {
+		result, err := ctx.EvaluateCondition(map[string]interface{}{
+			"context_var": "invalid",
+		})
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if result {
+			t.Error("expected false for invalid context_var structure")
+		}
+	})
+}
