@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-02-24
+
+### Added
+
+- **Interactive database reuse** - When `db.create` runs in interactive mode, Arbor scans sibling worktrees for existing databases and lets you choose to reuse one instead of creating a fresh database. Useful for stacked PRs where branches share data.
+- **Migration confirmation prompt** - After database creation or reuse, `db.create` prompts whether to run `php artisan migrate:fresh --seed`. Declining skips the migration step entirely.
+- **Database drop confirmation** - `db.destroy` now prompts for confirmation before dropping databases in interactive mode, preventing accidental data loss when databases may be shared between worktrees.
+- **`context_var` condition type** - New scaffold step condition that checks runtime context variables, enabling steps to be conditionally skipped based on choices made earlier in the scaffold flow.
+- **`--force` / `-f` flag for `arbor scaffold`** - Skip confirmation prompts when running scaffold non-interactively.
+
+### Fixed
+
+- Symlink resolution in worktree path comparison so the current worktree is correctly excluded from database reuse candidates on macOS (where `/var` resolves to `/private/var`).
+- `arbor scaffold` now correctly respects `--no-interactive` and `--force` flags for all prompts, not just step execution.
+
 ## [0.10.1] - 2026-02-05
 
 ### Performance
@@ -327,6 +342,8 @@ No changes in this release.
 - Interactive commands (work, prune)
 - Multi-platform builds and CI/CD
 
+[0.11.0]: https://github.com/artisanexperiences/arbor/compare/v0.10.1...v0.11.0
+[0.10.1]: https://github.com/artisanexperiences/arbor/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/artisanexperiences/arbor/compare/v0.9.5...v0.10.0
 [0.9.5]: https://github.com/artisanexperiences/arbor/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/artisanexperiences/arbor/compare/v0.9.3...v0.9.4

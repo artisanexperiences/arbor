@@ -206,6 +206,10 @@ arbor scaffold
 
 # When at project root without args, interactively select worktree
 arbor scaffold
+
+# Skip confirmation prompts
+arbor scaffold main --force
+arbor scaffold main -f
 ```
 
 ### `arbor init` with `--skip-scaffold`
@@ -348,6 +352,7 @@ All condition types support both single values and arrays:
 | `command_exists` | `command_exists: docker` | `command_exists: [docker, docker-compose]` | Check commands are available in PATH |
 | `file_exists` | `file_exists: .env` | `file_exists: [.env, composer.json]` | Check files exist in worktree |
 | `os` | `os: darwin` | `os: [darwin, linux]` | Check operating system |
+| `context_var` | `context_var: {key: skip_migrations, value: "true"}` | — | Check a runtime context variable set by a previous step |
 
 You can combine multiple condition types:
 
@@ -715,6 +720,19 @@ condition:
   file_exists:
     - .env
     - composer.json
+
+# Runtime context variable set by a previous step
+condition:
+  context_var:
+    key: skip_migrations
+    value: "true"
+
+# Negate a condition
+condition:
+  not:
+    context_var:
+      key: skip_migrations
+      value: "true"
 ```
 
 ### Example Configuration
