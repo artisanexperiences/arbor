@@ -105,6 +105,9 @@ arbor scaffold feature/user-auth
 
 # Destroy the entire project (removes worktrees and bare repo)
 arbor destroy
+
+# Pull updated config from the default branch worktree into the project root
+arbor pull-config
 ```
 
 ## Documentation
@@ -210,6 +213,26 @@ arbor scaffold
 # Skip confirmation prompts
 arbor scaffold main --force
 arbor scaffold main -f
+```
+
+### `arbor pull-config`
+
+Updates the project-level `arbor.yaml` (at the project root) with the one from the default branch worktree.
+
+Use this when the repository `arbor.yaml` (committed in the default branch) has been updated by your team and you want to pull those changes into your local project config.
+
+This replaces the project `arbor.yaml` entirely with the one from the default branch worktree.
+
+```bash
+# Pull config from the default branch worktree (prompts for confirmation)
+arbor pull-config
+
+# Skip confirmation prompt
+arbor pull-config --force
+arbor pull-config -f
+
+# Preview what would happen without making changes
+arbor pull-config --dry-run
 ```
 
 ### `arbor init` with `--skip-scaffold`
