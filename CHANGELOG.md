@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2026-02-24
+
+### Added
+
+- **`arbor pull-config` command** - Copy arbor.yaml from the default branch worktree to the project root. Simplifies propagating team config changes without manual file copying.
+- **Pull-config flags** - Support for `--force/-f` (skip confirmation), `--dry-run` (preview changes), `--verbose/-v` (detailed output), and `--quiet/-q` (suppress non-essential output).
+
 ## [0.11.0] - 2026-02-24
 
 ### Added
@@ -342,6 +349,7 @@ No changes in this release.
 - Interactive commands (work, prune)
 - Multi-platform builds and CI/CD
 
+[0.12.0]: https://github.com/artisanexperiences/arbor/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/artisanexperiences/arbor/compare/v0.10.1...v0.11.0
 [0.10.1]: https://github.com/artisanexperiences/arbor/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/artisanexperiences/arbor/compare/v0.9.5...v0.10.0
