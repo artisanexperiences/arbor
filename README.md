@@ -233,6 +233,14 @@ arbor pull-config -f
 
 # Preview what would happen without making changes
 arbor pull-config --dry-run
+
+# Show detailed output
+arbor pull-config --verbose
+arbor pull-config -v
+
+# Suppress all non-essential output
+arbor pull-config --quiet
+arbor pull-config -q
 ```
 
 ### `arbor init` with `--skip-scaffold`

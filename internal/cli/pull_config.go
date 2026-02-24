@@ -28,6 +28,8 @@ This replaces the project arbor.yaml entirely with the one from the default bran
 
 		dryRun := mustGetBool(cmd, "dry-run")
 		force := mustGetBool(cmd, "force")
+		verbose := mustGetBool(cmd, "verbose")
+		quiet := mustGetBool(cmd, "quiet")
 
 		sourcePath := filepath.Join(pc.ProjectPath, pc.DefaultBranch, "arbor.yaml")
 		destPath := filepath.Join(pc.ProjectPath, "arbor.yaml")
@@ -48,7 +50,9 @@ This replaces the project arbor.yaml entirely with the one from the default bran
 		}
 
 		if bytes.Equal(sourceBytes, destBytes) {
-			ui.PrintInfo("Already up to date")
+			if !quiet {
+				ui.PrintInfo("Already up to date")
+			}
 			return nil
 		}
 
@@ -58,21 +62,32 @@ This replaces the project arbor.yaml entirely with the one from the default bran
 		}
 
 		if !force {
+			if verbose && !quiet {
+				ui.PrintStep(fmt.Sprintf("Pull config from %s/arbor.yaml to project arbor.yaml?", pc.DefaultBranch))
+			}
 			confirmed, err := ui.Confirm(fmt.Sprintf("Pull config from %s/arbor.yaml to project arbor.yaml?", pc.DefaultBranch))
 			if err != nil {
 				return fmt.Errorf("confirmation prompt: %w", err)
 			}
 			if !confirmed {
-				ui.PrintInfo("Aborted")
+				if !quiet {
+					ui.PrintInfo("Aborted")
+				}
 				return nil
 			}
+		}
+
+		if verbose && !quiet {
+			ui.PrintStep(fmt.Sprintf("Copying config from %s worktree to project root", pc.DefaultBranch))
 		}
 
 		if err := os.WriteFile(destPath, sourceBytes, 0644); err != nil {
 			return fmt.Errorf("writing project config: %w", err)
 		}
 
-		ui.PrintSuccess("Project config updated")
+		if !quiet {
+			ui.PrintSuccess("Project config updated")
+		}
 		return nil
 	},
 }
@@ -82,4 +97,6 @@ func init() {
 
 	pullConfigCmd.Flags().Bool("dry-run", false, "Show what would be copied without making changes")
 	pullConfigCmd.Flags().BoolP("force", "f", false, "Skip confirmation prompt")
+	pullConfigCmd.Flags().BoolP("verbose", "v", false, "Show detailed output")
+	pullConfigCmd.Flags().BoolP("quiet", "q", false, "Suppress non-essential output")
 }

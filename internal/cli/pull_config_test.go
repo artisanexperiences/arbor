@@ -75,6 +75,12 @@ func ensurePullConfigTestFlags(t *testing.T) {
 	if pullConfigCmd.Flags().Lookup("force") == nil {
 		pullConfigCmd.Flags().BoolP("force", "f", false, "")
 	}
+	if pullConfigCmd.Flags().Lookup("verbose") == nil {
+		pullConfigCmd.Flags().BoolP("verbose", "v", false, "")
+	}
+	if pullConfigCmd.Flags().Lookup("quiet") == nil {
+		pullConfigCmd.Flags().BoolP("quiet", "q", false, "")
+	}
 }
 
 func TestPullConfig_Success(t *testing.T) {
