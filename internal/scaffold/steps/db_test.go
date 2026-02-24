@@ -3,6 +3,7 @@ package steps
 import (
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -11,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/artisanexperiences/arbor/internal/config"
+	"github.com/artisanexperiences/arbor/internal/git"
 	"github.com/artisanexperiences/arbor/internal/scaffold/types"
 )
 
@@ -723,6 +725,42 @@ func TestIsDatabaseExistsError(t *testing.T) {
 	})
 }
 
+func createTestRepo(t *testing.T) string {
+	tmpDir := t.TempDir()
+	repoDir := filepath.Join(tmpDir, "repo")
+	barePath := filepath.Join(tmpDir, ".bare")
+
+	require.NoError(t, os.MkdirAll(repoDir, 0755))
+
+	cmd := exec.Command("git", "init", "-b", "main")
+	cmd.Dir = repoDir
+	require.NoError(t, cmd.Run())
+
+	cmd = exec.Command("git", "config", "user.email", "test@example.com")
+	cmd.Dir = repoDir
+	require.NoError(t, cmd.Run())
+
+	cmd = exec.Command("git", "config", "user.name", "Test User")
+	cmd.Dir = repoDir
+	require.NoError(t, cmd.Run())
+
+	readmePath := filepath.Join(repoDir, "README.md")
+	require.NoError(t, os.WriteFile(readmePath, []byte("test"), 0644))
+
+	cmd = exec.Command("git", "add", ".")
+	cmd.Dir = repoDir
+	require.NoError(t, cmd.Run())
+
+	cmd = exec.Command("git", "commit", "-m", "Initial commit")
+	cmd.Dir = repoDir
+	require.NoError(t, cmd.Run())
+
+	cmd = exec.Command("git", "clone", "--bare", repoDir, barePath)
+	require.NoError(t, cmd.Run())
+
+	return barePath
+}
+
 func TestDiscoverWorktreeDatabases(t *testing.T) {
 	t.Run("returns nil when barePath is empty", func(t *testing.T) {
 		tmpDir := t.TempDir()
@@ -732,42 +770,74 @@ func TestDiscoverWorktreeDatabases(t *testing.T) {
 	})
 
 	t.Run("returns empty list when no other worktrees exist", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		barePath := filepath.Join(tmpDir, ".bare")
+		barePath := createTestRepo(t)
+		projectDir := filepath.Dir(barePath)
+		mainPath := filepath.Join(projectDir, "main")
+		require.NoError(t, git.CreateWorktree(barePath, mainPath, "main", ""))
+		require.NoError(t, config.WriteLocalState(mainPath, config.LocalState{DbSuffix: "main_suffix"}))
 
-		// Create a bare repo
-		require.NoError(t, os.MkdirAll(barePath, 0755))
-
-		// Create a worktree directory
-		worktreeDir := filepath.Join(tmpDir, "main")
-		require.NoError(t, os.MkdirAll(worktreeDir, 0755))
-
-		// Note: Since we can't easily mock git.ListWorktrees in this test,
-		// we'll test the error handling instead
-		_, err := discoverWorktreeDatabases(barePath, worktreeDir)
-		// This will fail with "fatal: not a git repository" but we're testing the flow
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "listing worktrees")
+		results, err := discoverWorktreeDatabases(barePath, mainPath)
+		assert.NoError(t, err)
+		assert.Empty(t, results)
 	})
 
 	t.Run("excludes current worktree from results", func(t *testing.T) {
-		// This test would require setting up a real git repo with worktrees
-		// which is complex. The logic is simple enough that we can trust it
-		// works based on the implementation review.
-		t.Skip("Requires complex git setup - covered by integration tests")
+		barePath := createTestRepo(t)
+		projectDir := filepath.Dir(barePath)
+		mainPath := filepath.Join(projectDir, "main")
+		featurePath := filepath.Join(projectDir, "feature")
+
+		require.NoError(t, git.CreateWorktree(barePath, mainPath, "main", ""))
+		require.NoError(t, git.CreateWorktree(barePath, featurePath, "feature", "main"))
+		require.NoError(t, config.WriteLocalState(mainPath, config.LocalState{DbSuffix: "main_suffix"}))
+		require.NoError(t, config.WriteLocalState(featurePath, config.LocalState{DbSuffix: "feature_suffix"}))
+
+		results, err := discoverWorktreeDatabases(barePath, mainPath)
+		assert.NoError(t, err)
+		if assert.Len(t, results, 1) {
+			assert.Equal(t, "feature", results[0].Branch)
+			assert.Equal(t, "feature_suffix", results[0].DbSuffix)
+		}
 	})
 
 	t.Run("only includes worktrees with DbSuffix", func(t *testing.T) {
-		// This test would require setting up a real git repo with worktrees
-		// which is complex. The logic is simple enough that we can trust it
-		// works based on the implementation review.
-		t.Skip("Requires complex git setup - covered by integration tests")
+		barePath := createTestRepo(t)
+		projectDir := filepath.Dir(barePath)
+		mainPath := filepath.Join(projectDir, "main")
+		alphaPath := filepath.Join(projectDir, "alpha")
+		featurePath := filepath.Join(projectDir, "feature")
+
+		require.NoError(t, git.CreateWorktree(barePath, mainPath, "main", ""))
+		require.NoError(t, git.CreateWorktree(barePath, alphaPath, "alpha", "main"))
+		require.NoError(t, git.CreateWorktree(barePath, featurePath, "feature", "main"))
+		require.NoError(t, config.WriteLocalState(featurePath, config.LocalState{DbSuffix: "feature_suffix"}))
+
+		results, err := discoverWorktreeDatabases(barePath, mainPath)
+		assert.NoError(t, err)
+		if assert.Len(t, results, 1) {
+			assert.Equal(t, "feature", results[0].Branch)
+			assert.Equal(t, "feature_suffix", results[0].DbSuffix)
+		}
 	})
 
 	t.Run("sorts results by branch name", func(t *testing.T) {
-		// This test would require setting up a real git repo with worktrees
-		// which is complex. The logic is simple enough that we can trust it
-		// works based on the implementation review.
-		t.Skip("Requires complex git setup - covered by integration tests")
+		barePath := createTestRepo(t)
+		projectDir := filepath.Dir(barePath)
+		mainPath := filepath.Join(projectDir, "main")
+		zuluPath := filepath.Join(projectDir, "zulu")
+		alphaPath := filepath.Join(projectDir, "alpha")
+
+		require.NoError(t, git.CreateWorktree(barePath, mainPath, "main", ""))
+		require.NoError(t, git.CreateWorktree(barePath, zuluPath, "zulu", "main"))
+		require.NoError(t, git.CreateWorktree(barePath, alphaPath, "alpha", "main"))
+		require.NoError(t, config.WriteLocalState(zuluPath, config.LocalState{DbSuffix: "zulu_suffix"}))
+		require.NoError(t, config.WriteLocalState(alphaPath, config.LocalState{DbSuffix: "alpha_suffix"}))
+
+		results, err := discoverWorktreeDatabases(barePath, mainPath)
+		assert.NoError(t, err)
+		if assert.Len(t, results, 2) {
+			assert.Equal(t, "alpha", results[0].Branch)
+			assert.Equal(t, "zulu", results[1].Branch)
+		}
 	})
 }

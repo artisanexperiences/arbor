@@ -611,6 +611,11 @@ func discoverWorktreeDatabases(barePath, currentWorktreePath string) ([]Worktree
 		return nil, nil
 	}
 
+	currentPath := currentWorktreePath
+	if resolved, err := filepath.EvalSymlinks(currentWorktreePath); err == nil {
+		currentPath = resolved
+	}
+
 	// List all worktrees
 	worktrees, err := git.ListWorktrees(barePath)
 	if err != nil {
@@ -619,8 +624,13 @@ func discoverWorktreeDatabases(barePath, currentWorktreePath string) ([]Worktree
 
 	var results []WorktreeDatabase
 	for _, wt := range worktrees {
+		worktreePath := wt.Path
+		if resolved, err := filepath.EvalSymlinks(wt.Path); err == nil {
+			worktreePath = resolved
+		}
+
 		// Skip the current worktree
-		if wt.Path == currentWorktreePath {
+		if worktreePath == currentPath {
 			continue
 		}
 

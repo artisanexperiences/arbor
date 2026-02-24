@@ -35,6 +35,15 @@ a worktree to scaffold.`,
 		dryRun := mustGetBool(cmd, "dry-run")
 		verbose := mustGetBool(cmd, "verbose")
 		quiet := mustGetBool(cmd, "quiet")
+		noInteractive := mustGetBool(cmd, "no-interactive")
+		force := mustGetBool(cmd, "force")
+
+		promptMode := types.PromptMode{
+			Interactive:   ui.IsInteractive(),
+			NoInteractive: noInteractive,
+			Force:         force,
+			CI:            os.Getenv("CI") != "",
+		}
 
 		worktrees, err := git.ListWorktreesDetailed(pc.BarePath, pc.CWD, pc.DefaultBranch)
 		if err != nil {
@@ -90,7 +99,7 @@ a worktree to scaffold.`,
 				return fmt.Errorf("current worktree not found")
 			}
 
-			if ui.IsInteractive() {
+			if promptMode.Allow() {
 				confirmed, err := ui.ConfirmScaffold(selectedWorktree.Branch)
 				if err != nil {
 					return err
@@ -101,7 +110,7 @@ a worktree to scaffold.`,
 				}
 			}
 		} else {
-			if !ui.IsInteractive() {
+			if !promptMode.Allow() {
 				return fmt.Errorf("worktree path required (run from project root with path, or use interactive mode)")
 			}
 
@@ -138,12 +147,6 @@ a worktree to scaffold.`,
 			siteName = pc.Config.SiteName
 		}
 
-		promptMode := types.PromptMode{
-			Interactive:   ui.IsInteractive(),
-			NoInteractive: false,
-			Force:         false,
-			CI:            os.Getenv("CI") != "",
-		}
 		if err := pc.ScaffoldManager().RunScaffold(selectedWorktree.Path, selectedWorktree.Branch, repoName, siteName, preset, pc.Config, pc.BarePath, promptMode, dryRun, verbose, quiet); err != nil {
 			ui.PrintErrorWithHint("Scaffold steps failed", err.Error())
 			return err
@@ -156,4 +159,6 @@ a worktree to scaffold.`,
 
 func init() {
 	rootCmd.AddCommand(scaffoldCmd)
+
+	scaffoldCmd.Flags().BoolP("force", "f", false, "Skip confirmation prompts")
 }
