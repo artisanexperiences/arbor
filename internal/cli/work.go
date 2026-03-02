@@ -36,6 +36,7 @@ available branches or entering a new branch name.`,
 		dryRun := mustGetBool(cmd, "dry-run")
 		verbose := mustGetBool(cmd, "verbose")
 		quiet := mustGetBool(cmd, "quiet")
+		skipScaffold := mustGetBool(cmd, "skip-scaffold")
 
 		var branch string
 		if len(args) > 0 {
@@ -114,33 +115,37 @@ available branches or entering a new branch name.`,
 		}
 
 		if !dryRun {
-			preset := pc.Config.Preset
-			if preset == "" {
-				preset = pc.PresetManager().Detect(absWorktreePath)
-			}
+			if !skipScaffold {
+				preset := pc.Config.Preset
+				if preset == "" {
+					preset = pc.PresetManager().Detect(absWorktreePath)
+				}
 
-			if verbose && preset != "" {
-				ui.PrintInfo(fmt.Sprintf("Running scaffold for preset: %s", preset))
-			}
+				if verbose && preset != "" {
+					ui.PrintInfo(fmt.Sprintf("Running scaffold for preset: %s", preset))
+				}
 
-			repoName := filepath.Base(filepath.Dir(absWorktreePath))
-			folderName := filepath.Base(absWorktreePath)
+				repoName := filepath.Base(filepath.Dir(absWorktreePath))
+				folderName := filepath.Base(absWorktreePath)
 
-			// For the default branch, use the saved SiteName from project config
-			// For feature branches, use the worktree folder name
-			siteName := folderName
-			if branch == pc.DefaultBranch && pc.Config.SiteName != "" {
-				siteName = pc.Config.SiteName
-			}
+				// For the default branch, use the saved SiteName from project config
+				// For feature branches, use the worktree folder name
+				siteName := folderName
+				if branch == pc.DefaultBranch && pc.Config.SiteName != "" {
+					siteName = pc.Config.SiteName
+				}
 
-			promptMode := types.PromptMode{
-				Interactive:   ui.IsInteractive(),
-				NoInteractive: false,
-				Force:         false,
-				CI:            os.Getenv("CI") != "",
-			}
-			if err := pc.ScaffoldManager().RunScaffold(absWorktreePath, branch, repoName, siteName, preset, pc.Config, pc.BarePath, promptMode, false, verbose, quiet); err != nil {
-				ui.PrintErrorWithHint("Scaffold steps failed", err.Error())
+				promptMode := types.PromptMode{
+					Interactive:   ui.IsInteractive(),
+					NoInteractive: false,
+					Force:         false,
+					CI:            os.Getenv("CI") != "",
+				}
+				if err := pc.ScaffoldManager().RunScaffold(absWorktreePath, branch, repoName, siteName, preset, pc.Config, pc.BarePath, promptMode, false, verbose, quiet); err != nil {
+					ui.PrintErrorWithHint("Scaffold steps failed", err.Error())
+				}
+			} else {
+				ui.PrintInfo("Skipped scaffold (use 'arbor scaffold <branch>' to scaffold manually)")
 			}
 
 			// Check if .arbor.local should be gitignored
@@ -166,4 +171,5 @@ func init() {
 
 	workCmd.Flags().StringP("base", "b", "", "Base branch for new worktree")
 	workCmd.Flags().Bool("no-track", false, "Skip setting up remote tracking for new branches")
+	workCmd.Flags().Bool("skip-scaffold", false, "Skip scaffold steps during work")
 }
