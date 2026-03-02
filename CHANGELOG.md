@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.1] - 2026-03-02
+
+### Fixed
+
+- **`arbor work` detached HEAD from remote branches** - When selecting a remote branch (e.g. `origin/feature/foo`) from the interactive list, the worktree was created in detached HEAD state and not visible in `arbor list`. The remote prefix is now stripped to create a proper local tracking branch.
+
 ## [0.13.0] - 2026-03-02
 
 ### Added
@@ -373,6 +379,7 @@ No changes in this release.
 [0.4.2]: https://github.com/artisanexperiences/arbor/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/artisanexperiences/arbor/compare/v0.4.0...v0.4.1
 [0.3.1]: https://github.com/artisanexperiences/arbor/compare/v0.3.0...v0.3.1
+[0.13.1]: https://github.com/artisanexperiences/arbor/compare/v0.13.0...v0.13.1
 [0.13.0]: https://github.com/artisanexperiences/arbor/compare/v0.12.0...v0.13.0
 [0.3.0]: https://github.com/artisanexperiences/arbor/compare/v0.2.4...v0.3.0
 [0.2.0]: https://github.com/artisanexperiences/arbor/compare/v0.1.0...v0.2.0
