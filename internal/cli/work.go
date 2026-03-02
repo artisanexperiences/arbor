@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -58,6 +59,26 @@ available branches or entering a new branch name.`,
 
 		if branch == "" {
 			return fmt.Errorf("branch name required (run interactively or provide branch as argument)")
+		}
+
+		// If the selected branch is a remote ref (e.g. "origin/feature/foo"), strip the
+		// remote prefix to derive the local branch name and use the remote ref as the
+		// base so that CreateWorktree creates a proper local tracking branch rather than
+		// a detached-HEAD worktree.
+		if idx := strings.IndexByte(branch, '/'); idx != -1 {
+			remote := branch[:idx]
+			localBranch := branch[idx+1:]
+			// Only treat it as a remote ref when the prefix matches a known remote.
+			remotes, _ := git.ListRemotes(pc.BarePath)
+			for _, r := range remotes {
+				if r == remote {
+					if baseBranch == "" {
+						baseBranch = branch // use the full remote ref as the base
+					}
+					branch = localBranch
+					break
+				}
+			}
 		}
 
 		if baseBranch == "" {

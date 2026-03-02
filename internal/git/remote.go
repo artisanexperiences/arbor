@@ -49,6 +49,22 @@ func GetRemoteURLFromWorktree(worktreePath string) (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
+// ListRemotes returns the names of all configured remotes (e.g. ["origin"]).
+func ListRemotes(barePath string) ([]string, error) {
+	cmd := exec.Command("git", "-C", barePath, "remote")
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("listing remotes: %w", err)
+	}
+	var remotes []string
+	for _, line := range strings.Split(string(output), "\n") {
+		if r := strings.TrimSpace(line); r != "" {
+			remotes = append(remotes, r)
+		}
+	}
+	return remotes, nil
+}
+
 // HasFetchRefspec checks if fetch refspec is already configured.
 func HasFetchRefspec(barePath string) (bool, error) {
 	cmd := exec.Command("git", "-C", barePath, "config", "--get", "remote.origin.fetch")

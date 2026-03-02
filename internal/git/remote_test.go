@@ -108,6 +108,24 @@ func TestGetRemoteURLFromWorktree_NotConfigured(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestListRemotes(t *testing.T) {
+	barePath, _ := createTestRepo(t)
+
+	// createTestRepo clones to a bare repo, so "origin" is already configured
+	remotes, err := ListRemotes(barePath)
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"origin"}, remotes)
+
+	// Add a second remote
+	cmd := exec.Command("git", "-C", barePath, "remote", "add", "upstream", "git@github.com:upstream/repo.git")
+	assert.NoError(t, cmd.Run())
+
+	remotes, err = ListRemotes(barePath)
+	assert.NoError(t, err)
+	assert.Contains(t, remotes, "origin")
+	assert.Contains(t, remotes, "upstream")
+}
+
 func TestHasFetchRefspec(t *testing.T) {
 	barePath, _ := createTestRepo(t)
 
