@@ -78,6 +78,9 @@ arbor work feature/user-auth
 # Create a worktree from a specific base branch
 arbor work feature/user-auth -b develop
 
+# Create a worktree without running scaffold steps
+arbor work feature/user-auth --skip-scaffold
+
 # Sync current worktree with upstream (defaults to main, uses rebase)
 arbor sync
 
@@ -243,16 +246,20 @@ arbor pull-config --quiet
 arbor pull-config -q
 ```
 
-### `arbor init` with `--skip-scaffold`
+### `--skip-scaffold`
 
-Skip scaffold steps during init and run them manually later:
+Both `arbor init` and `arbor work` support `--skip-scaffold` to defer scaffold steps and run them manually later:
 
 ```bash
 # Clone without scaffolding
 arbor init git@github.com:user/repo.git --skip-scaffold
 
+# Create a worktree without scaffolding
+arbor work feature/my-feature --skip-scaffold
+
 # Scaffold when ready
 arbor scaffold main
+arbor scaffold feature/my-feature
 ```
 
 ## Configuration

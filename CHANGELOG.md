@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - 2026-03-02
+
+### Added
+
+- **`--skip-scaffold` flag for `arbor work`** - Skip scaffold steps when creating a worktree, consistent with the existing `--skip-scaffold` behaviour on `arbor init`. Run `arbor scaffold <branch>` afterwards to scaffold manually.
+
 ## [0.12.0] - 2026-02-24
 
 ### Added
@@ -367,6 +373,7 @@ No changes in this release.
 [0.4.2]: https://github.com/artisanexperiences/arbor/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/artisanexperiences/arbor/compare/v0.4.0...v0.4.1
 [0.3.1]: https://github.com/artisanexperiences/arbor/compare/v0.3.0...v0.3.1
+[0.13.0]: https://github.com/artisanexperiences/arbor/compare/v0.12.0...v0.13.0
 [0.3.0]: https://github.com/artisanexperiences/arbor/compare/v0.2.4...v0.3.0
 [0.2.0]: https://github.com/artisanexperiences/arbor/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/artisanexperiences/arbor/compare/v0.0.2...v0.1.0
