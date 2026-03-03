@@ -9,6 +9,6 @@ type DatabaseOption struct {
 // DbPrompter defines the prompt contract for database-related steps.
 type DbPrompter interface {
 	SelectDatabase(options []DatabaseOption) (string, error)
-	ConfirmMigrations() (bool, error)
+	ConfirmMigrations(databaseName string) (bool, error)
 	ConfirmDatabaseDrop(suffix string, databases []string) (bool, error)
 }

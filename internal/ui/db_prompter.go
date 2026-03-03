@@ -44,14 +44,21 @@ func (p UIDbPrompter) SelectDatabase(options []prompts.DatabaseOption) (string, 
 }
 
 // ConfirmMigrations prompts the user to confirm running database migrations.
-func (p UIDbPrompter) ConfirmMigrations() (bool, error) {
+// If databaseName is non-empty, it is included in the description so the user
+// can distinguish between prompts when multiple databases are being scaffolded.
+func (p UIDbPrompter) ConfirmMigrations(databaseName string) (bool, error) {
 	var confirmed bool
+
+	description := "php artisan migrate:fresh --seed"
+	if databaseName != "" {
+		description = fmt.Sprintf("php artisan migrate:fresh --seed on %s", databaseName)
+	}
 
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewConfirm().
 				Title("Run migrations?").
-				Description("php artisan migrate:fresh --seed").
+				Description(description).
 				Affirmative("Yes").
 				Negative("No").
 				Value(&confirmed),

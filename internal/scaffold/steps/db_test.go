@@ -13,8 +13,28 @@ import (
 
 	"github.com/artisanexperiences/arbor/internal/config"
 	"github.com/artisanexperiences/arbor/internal/git"
+	"github.com/artisanexperiences/arbor/internal/scaffold/prompts"
 	"github.com/artisanexperiences/arbor/internal/scaffold/types"
 )
+
+// mockDbPrompter records calls to ConfirmMigrations for assertion in tests.
+type mockDbPrompter struct {
+	confirmMigrationsCall string // the databaseName passed to ConfirmMigrations
+	confirmResult         bool
+}
+
+func (m *mockDbPrompter) SelectDatabase(options []prompts.DatabaseOption) (string, error) {
+	return "", nil
+}
+
+func (m *mockDbPrompter) ConfirmMigrations(databaseName string) (bool, error) {
+	m.confirmMigrationsCall = databaseName
+	return m.confirmResult, nil
+}
+
+func (m *mockDbPrompter) ConfirmDatabaseDrop(suffix string, databases []string) (bool, error) {
+	return true, nil
+}
 
 func TestDbCreateStep(t *testing.T) {
 	t.Run("name returns db.create", func(t *testing.T) {
@@ -448,6 +468,106 @@ func TestDbCreateStep(t *testing.T) {
 		err := step.Run(ctx, types.StepOptions{Verbose: false})
 		assert.NoError(t, err, "Should not error when ping fails, just skip")
 		assert.Empty(t, ctx.GetDbSuffix(), "DbSuffix should not be set when skipped")
+	})
+}
+
+func TestHandleMigrationPrompt(t *testing.T) {
+	t.Run("passes full database name to prompter when suffix is set", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		mockClient := NewMockDatabaseClient()
+		mockPrompter := &mockDbPrompter{confirmResult: true}
+
+		step := NewDbCreateStepWithPrompter(config.StepConfig{}, MockClientFactory(mockClient), mockPrompter)
+		ctx := &types.ScaffoldContext{
+			WorktreePath: tmpDir,
+			SiteName:     "myapp",
+		}
+		ctx.SetDbSuffix("swift_runner")
+
+		err := step.handleMigrationPrompt(ctx, types.StepOptions{PromptMode: types.PromptMode{Interactive: true}})
+		assert.NoError(t, err)
+		assert.Equal(t, "myapp_swift_runner", mockPrompter.confirmMigrationsCall,
+			"Should pass the full database name to the prompter")
+	})
+
+	t.Run("passes full database name with custom prefix to prompter", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		mockClient := NewMockDatabaseClient()
+		mockPrompter := &mockDbPrompter{confirmResult: true}
+
+		step := NewDbCreateStepWithPrompter(config.StepConfig{
+			Args: []string{"--prefix", "quotes"},
+		}, MockClientFactory(mockClient), mockPrompter)
+		ctx := &types.ScaffoldContext{
+			WorktreePath: tmpDir,
+			SiteName:     "myapp",
+		}
+		ctx.SetDbSuffix("swift_runner")
+
+		err := step.handleMigrationPrompt(ctx, types.StepOptions{PromptMode: types.PromptMode{Interactive: true}})
+		assert.NoError(t, err)
+		assert.Equal(t, "quotes_swift_runner", mockPrompter.confirmMigrationsCall,
+			"Should use the custom prefix, not the site name")
+	})
+
+	t.Run("passes empty database name to prompter when no suffix is set", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		mockClient := NewMockDatabaseClient()
+		mockPrompter := &mockDbPrompter{confirmResult: true}
+
+		step := NewDbCreateStepWithPrompter(config.StepConfig{}, MockClientFactory(mockClient), mockPrompter)
+		ctx := &types.ScaffoldContext{
+			WorktreePath: tmpDir,
+			SiteName:     "myapp",
+		}
+		// No suffix set
+
+		err := step.handleMigrationPrompt(ctx, types.StepOptions{PromptMode: types.PromptMode{Interactive: true}})
+		assert.NoError(t, err)
+		assert.Equal(t, "", mockPrompter.confirmMigrationsCall,
+			"Should pass empty string when no suffix is available")
+	})
+
+	t.Run("sets skip_migrations when user declines", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		mockClient := NewMockDatabaseClient()
+		mockPrompter := &mockDbPrompter{confirmResult: false}
+
+		step := NewDbCreateStepWithPrompter(config.StepConfig{}, MockClientFactory(mockClient), mockPrompter)
+		ctx := &types.ScaffoldContext{
+			WorktreePath: tmpDir,
+			SiteName:     "myapp",
+		}
+		ctx.SetDbSuffix("swift_runner")
+
+		err := step.handleMigrationPrompt(ctx, types.StepOptions{PromptMode: types.PromptMode{Interactive: true}})
+		assert.NoError(t, err)
+		assert.Equal(t, "true", ctx.GetVar("skip_migrations"),
+			"Should set skip_migrations when user declines")
+	})
+
+	t.Run("does not prompt when PromptMode does not allow", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		mockClient := NewMockDatabaseClient()
+		mockPrompter := &mockDbPrompter{confirmResult: true}
+
+		step := NewDbCreateStepWithPrompter(config.StepConfig{}, MockClientFactory(mockClient), mockPrompter)
+		ctx := &types.ScaffoldContext{
+			WorktreePath: tmpDir,
+			SiteName:     "myapp",
+		}
+		ctx.SetDbSuffix("swift_runner")
+
+		// Default StepOptions has PromptMode that does not allow prompts
+		err := step.handleMigrationPrompt(ctx, types.StepOptions{})
+		assert.NoError(t, err)
+		assert.Equal(t, "", mockPrompter.confirmMigrationsCall,
+			"Should not call prompter when prompts are not allowed")
 	})
 }
 

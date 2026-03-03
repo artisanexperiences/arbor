@@ -348,7 +348,15 @@ func (s *DbCreateStep) handleMigrationPrompt(ctx *types.ScaffoldContext, opts ty
 		return nil
 	}
 
-	confirmed, err := s.prompter.ConfirmMigrations()
+	// Build the database name for display so the user can distinguish between
+	// prompts when multiple databases are being scaffolded.
+	databaseName := ""
+	if suffix := ctx.GetDbSuffix(); suffix != "" {
+		siteName := s.getPrefixOrSiteName(ctx)
+		databaseName = fmt.Sprintf("%s_%s", words.SanitizeSiteName(siteName), suffix)
+	}
+
+	confirmed, err := s.prompter.ConfirmMigrations(databaseName)
 	if err != nil {
 		return fmt.Errorf("migration confirmation prompt: %w", err)
 	}
