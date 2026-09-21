@@ -470,13 +470,14 @@ scaffold:
 
 **Supported Conditions:**
 
-All condition types support both single values and arrays:
+Conditions support scalar values, maps, and arrays where applicable:
 
 | Condition | Single Value | Array | Description |
 |-----------|--------------|-------|-------------|
 | `env_exists` | `env_exists: API_KEY` | `env_exists: [API_KEY, API_SECRET]` | Check OS environment variables are set |
 | `command_exists` | `command_exists: docker` | `command_exists: [docker, docker-compose]` | Check commands are available in PATH |
 | `file_exists` | `file_exists: .env` | `file_exists: [.env, composer.json]` | Check files exist in worktree |
+| `env_file_contains` | `env_file_contains: {file: .env, key: DB_CONNECTION}` | — | Check an env file key exists, optionally matching `value` exactly |
 | `os` | `os: darwin` | `os: [darwin, linux]` | Check operating system |
 | `context_var` | `context_var: {key: skip_migrations, value: "true"}` | — | Check a runtime context variable set by a previous step |
 
@@ -835,6 +836,13 @@ condition:
     file: .env
     key: DB_CONNECTION
 
+# Match an exact value in an env file
+condition:
+  env_file_contains:
+    file: .env
+    key: DB_CONNECTION
+    value: mysql
+
 # Array conditions - check multiple items at once
 condition:
   env_exists:
@@ -863,6 +871,8 @@ condition:
 
 ### Example Configuration
 
+The Laravel preset creates isolated database names for MySQL and PostgreSQL. For SQLite, it leaves `DB_DATABASE` unchanged so Laravel uses its default `database/database.sqlite` path. An explicitly configured SQLite `DB_DATABASE` path is preserved.
+
 Complete example for a Laravel project:
 
 ```yaml
@@ -875,10 +885,19 @@ scaffold:
           file: .env
           key: DB_CONNECTION
 
-    # Write database name to .env
+    # Write database name to .env for non-SQLite databases
     - name: env.write
       key: DB_DATABASE
       value: "{{ .SiteName }}_{{ .DbSuffix }}"
+      condition:
+        env_file_contains:
+          file: .env
+          key: DB_CONNECTION
+        not:
+          env_file_contains:
+            file: .env
+            key: DB_CONNECTION
+            value: sqlite
 
     # Install dependencies
     - name: php.composer

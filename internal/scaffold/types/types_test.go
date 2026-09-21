@@ -352,6 +352,65 @@ func TestScaffoldContext_EnvFileConditions(t *testing.T) {
 		}
 	})
 
+	t.Run("env_file_contains - value matches", func(t *testing.T) {
+		envContent := "DB_CONNECTION=mysql"
+		if err := os.WriteFile(filepath.Join(tmpDir, ".env"), []byte(envContent), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		result, err := ctx.EvaluateCondition(map[string]interface{}{
+			"env_file_contains": map[string]interface{}{
+				"file":  ".env",
+				"key":   "DB_CONNECTION",
+				"value": "mysql",
+			},
+		})
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if !result {
+			t.Error("expected true when env value matches")
+		}
+	})
+
+	t.Run("env_file_contains - value does not match", func(t *testing.T) {
+		result, err := ctx.EvaluateCondition(map[string]interface{}{
+			"env_file_contains": map[string]interface{}{
+				"file":  ".env",
+				"key":   "DB_CONNECTION",
+				"value": "sqlite",
+			},
+		})
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if result {
+			t.Error("expected false when env value does not match")
+		}
+	})
+
+	t.Run("multiple conditions evaluate alongside not", func(t *testing.T) {
+		result, err := ctx.EvaluateCondition(map[string]interface{}{
+			"env_file_contains": map[string]interface{}{
+				"file": ".env",
+				"key":  "DB_CONNECTION",
+			},
+			"not": map[string]interface{}{
+				"env_file_contains": map[string]interface{}{
+					"file":  ".env",
+					"key":   "DB_CONNECTION",
+					"value": "sqlite",
+				},
+			},
+		})
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if !result {
+			t.Error("expected all conditions to pass")
+		}
+	})
+
 	t.Run("env_file_missing - file missing", func(t *testing.T) {
 		os.Remove(filepath.Join(tmpDir, ".env"))
 		result, err := ctx.EvaluateCondition(map[string]interface{}{

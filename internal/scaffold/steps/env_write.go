@@ -35,6 +35,7 @@ type EnvWriteStep struct {
 	key       string
 	value     string
 	file      string
+	condition map[string]interface{}
 	fs        fs.FS
 	useRealFS bool // flag to indicate if we should use real FS for atomic operations
 }
@@ -57,6 +58,7 @@ func NewEnvWriteStepWithFS(cfg config.StepConfig, filesystem fs.FS) *EnvWriteSte
 		key:       cfg.Key,
 		value:     cfg.Value,
 		file:      cfg.File,
+		condition: cfg.Condition,
 		fs:        filesystem,
 		useRealFS: useRealFS,
 	}
@@ -67,7 +69,12 @@ func (s *EnvWriteStep) Name() string {
 }
 
 func (s *EnvWriteStep) Condition(ctx *types.ScaffoldContext) bool {
-	return true
+	if len(s.condition) == 0 {
+		return true
+	}
+
+	result, err := ctx.EvaluateCondition(s.condition)
+	return err == nil && result
 }
 
 func (s *EnvWriteStep) Run(ctx *types.ScaffoldContext, opts types.StepOptions) error {

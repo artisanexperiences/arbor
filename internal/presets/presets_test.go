@@ -76,7 +76,7 @@ func TestLaravelPreset_DefaultSteps(t *testing.T) {
 	assert.Equal(t, ".env", steps[2].To)
 
 	assert.Equal(t, "php.laravel", steps[3].Name)
-	assert.Equal(t, []string{"key:generate", "--show", "--no-interaction"}, steps[3].Args)
+	assert.Equal(t, []string{"key:generate", "--show", "--no-interaction", "--no-ansi"}, steps[3].Args)
 	assert.Equal(t, "AppKey", steps[3].StoreAs)
 
 	assert.Equal(t, "env.write", steps[4].Name)
@@ -88,6 +88,9 @@ func TestLaravelPreset_DefaultSteps(t *testing.T) {
 	assert.Equal(t, "env.write", steps[6].Name)
 	assert.Equal(t, "DB_DATABASE", steps[6].Key)
 	assert.Equal(t, "{{ .SanitizedSiteName }}_{{ .DbSuffix }}", steps[6].Value)
+	assert.Equal(t, ".env", steps[6].Condition["env_file_contains"].(map[string]interface{})["file"])
+	assert.Equal(t, "DB_CONNECTION", steps[6].Condition["env_file_contains"].(map[string]interface{})["key"])
+	assert.NotNil(t, steps[6].Condition["not"])
 
 	assert.Equal(t, "node.npm", steps[7].Name)
 	assert.Equal(t, []string{"ci"}, steps[7].Args)

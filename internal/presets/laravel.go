@@ -20,10 +20,13 @@ func NewLaravel() *Laravel {
 				{Name: "php.composer", Args: []string{"install"}, Condition: map[string]interface{}{"file_exists": "composer.lock"}},
 				{Name: "php.composer", Args: []string{"update"}, Condition: map[string]interface{}{"not": map[string]interface{}{"file_exists": "composer.lock"}}},
 				{Name: "file.copy", From: ".env.example", To: ".env"},
-				{Name: "php.laravel", Args: []string{"key:generate", "--show", "--no-interaction"}, StoreAs: "AppKey", Condition: map[string]interface{}{"env_file_missing": "APP_KEY"}},
+				{Name: "php.laravel", Args: []string{"key:generate", "--show", "--no-interaction", "--no-ansi"}, StoreAs: "AppKey", Condition: map[string]interface{}{"env_file_missing": "APP_KEY"}},
 				{Name: "env.write", Key: "APP_KEY", Value: "{{ .AppKey }}", Condition: map[string]interface{}{"env_file_missing": "APP_KEY"}},
 				{Name: "db.create", Condition: map[string]interface{}{"env_file_contains": map[string]interface{}{"file": ".env", "key": "DB_CONNECTION"}}},
-				{Name: "env.write", Key: "DB_DATABASE", Value: "{{ .SanitizedSiteName }}_{{ .DbSuffix }}", Condition: map[string]interface{}{"env_file_contains": map[string]interface{}{"file": ".env", "key": "DB_CONNECTION"}}},
+				{Name: "env.write", Key: "DB_DATABASE", Value: "{{ .SanitizedSiteName }}_{{ .DbSuffix }}", Condition: map[string]interface{}{
+					"env_file_contains": map[string]interface{}{"file": ".env", "key": "DB_CONNECTION"},
+					"not":               map[string]interface{}{"env_file_contains": map[string]interface{}{"file": ".env", "key": "DB_CONNECTION", "value": "sqlite"}},
+				}},
 				{Name: "node.npm", Args: []string{"ci"}, Condition: map[string]interface{}{"file_exists": "package-lock.json"}},
 				{
 					Name: "php.laravel", Args: []string{"migrate:fresh", "--seed", "--no-interaction"},

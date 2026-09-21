@@ -25,6 +25,25 @@ func TestEnvWriteStep(t *testing.T) {
 		assert.True(t, step.Condition(&ctx))
 	})
 
+	t.Run("evaluates configured condition", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		require.NoError(t, os.WriteFile(filepath.Join(tmpDir, ".env"), []byte("DB_CONNECTION=sqlite\n"), 0644))
+		step := NewEnvWriteStep(config.StepConfig{
+			Condition: map[string]interface{}{
+				"not": map[string]interface{}{
+					"env_file_contains": map[string]interface{}{
+						"file":  ".env",
+						"key":   "DB_CONNECTION",
+						"value": "sqlite",
+					},
+				},
+			},
+		})
+		ctx := types.ScaffoldContext{WorktreePath: tmpDir}
+
+		assert.False(t, step.Condition(&ctx))
+	})
+
 	t.Run("creates new .env file with key=value", func(t *testing.T) {
 		tmpDir := t.TempDir()
 

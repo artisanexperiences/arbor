@@ -62,14 +62,6 @@ func (ctx *ScaffoldContext) EvaluateCondition(conditions map[string]interface{})
 		return true, nil
 	}
 
-	if not, ok := conditions["not"]; ok {
-		result, err := ctx.evaluateCondition(not)
-		if err != nil {
-			return false, err
-		}
-		return !result, nil
-	}
-
 	return ctx.evaluateCondition(conditions)
 }
 
@@ -313,8 +305,9 @@ func (ctx *ScaffoldContext) envNotExists(value interface{}) (bool, error) {
 
 func (ctx *ScaffoldContext) envFileContains(value interface{}) (bool, error) {
 	var config struct {
-		File string `mapstructure:"file"`
-		Key  string `mapstructure:"key"`
+		File  string `mapstructure:"file"`
+		Key   string `mapstructure:"key"`
+		Value string `mapstructure:"value"`
 	}
 
 	switch v := value.(type) {
@@ -333,7 +326,13 @@ func (ctx *ScaffoldContext) envFileContains(value interface{}) (bool, error) {
 
 	env := utils.ReadEnvFile(ctx.WorktreePath, config.File)
 	val, exists := env[config.Key]
-	return exists && val != "", nil
+	if !exists || val == "" {
+		return false, nil
+	}
+	if config.Value != "" {
+		return val == config.Value, nil
+	}
+	return true, nil
 }
 
 func (ctx *ScaffoldContext) envFileMissing(value interface{}) (bool, error) {

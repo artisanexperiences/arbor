@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/artisanexperiences/arbor/internal/config"
+	arbor_exec "github.com/artisanexperiences/arbor/internal/exec"
 	"github.com/artisanexperiences/arbor/internal/scaffold/types"
 )
 
@@ -626,6 +627,19 @@ func TestBinaryStep_OutputCapture(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Equal(t, "spaced", ctx.GetVar("Spaced"))
+	})
+
+	t.Run("removes ANSI escape sequences from captured output", func(t *testing.T) {
+		commander := arbor_exec.NewMockCommander()
+		args := []string{"artisan", "key:generate", "--show", "--no-ansi"}
+		commander.SetResponse("php", args, []byte("\x1b[33mbase64:key\x1b[39m\n"), nil)
+		step := NewBinaryStepWithExecutor("php.laravel", "php artisan", args[1:], "AppKey", arbor_exec.NewCommandExecutor(commander))
+		ctx := &types.ScaffoldContext{WorktreePath: t.TempDir()}
+
+		err := step.Run(ctx, types.StepOptions{})
+
+		assert.NoError(t, err)
+		assert.Equal(t, "base64:key", ctx.GetVar("AppKey"))
 	})
 
 	t.Run("does not store output when store_as is empty", func(t *testing.T) {

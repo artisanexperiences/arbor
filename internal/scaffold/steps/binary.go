@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"regexp"
 	"strings"
 
 	"github.com/artisanexperiences/arbor/internal/config"
@@ -20,6 +21,8 @@ type BinaryStep struct {
 	storeAs   string
 	executor  *arbor_exec.CommandExecutor
 }
+
+var ansiEscapeSequence = regexp.MustCompile(`\x1b(?:\[[0-?]*[ -/]*[@-~])`)
 
 // NewBinaryStep creates a binary step with the default command executor.
 func NewBinaryStep(name, binary string, args []string, storeAs string) *BinaryStep {
@@ -96,7 +99,8 @@ func (s *BinaryStep) Run(ctx *types.ScaffoldContext, opts types.StepOptions) err
 	}
 
 	if s.storeAs != "" {
-		ctx.SetVar(s.storeAs, strings.TrimSpace(string(output)))
+		capturedOutput := ansiEscapeSequence.ReplaceAllString(string(output), "")
+		ctx.SetVar(s.storeAs, strings.TrimSpace(capturedOutput))
 		if opts.Verbose {
 			fmt.Printf("  Stored output as %s\n", s.storeAs)
 		}
