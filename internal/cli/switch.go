@@ -67,6 +67,17 @@ func performSwitch(projectRoot, targetMode string, force bool) error {
 		return fmt.Errorf("already using %s mode", targetMode)
 	}
 
+	// Windows does not allow removing or renaming the process's current
+	// directory. Switch out of a workspace before converting the project.
+	originalCWD, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("getting current directory: %w", err)
+	}
+	if err := os.Chdir(projectRoot); err != nil {
+		return fmt.Errorf("changing to project root: %w", err)
+	}
+	defer func() { _ = os.Chdir(originalCWD) }()
+
 	cfg, err := config.LoadProject(projectRoot)
 	if err != nil {
 		return fmt.Errorf("loading config: %w", err)
